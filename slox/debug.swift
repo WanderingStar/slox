@@ -33,10 +33,10 @@ func constantInstruction(_ name: String, chunk: Chunk, offset: Int) -> Int {
 func disassembleInstruction(_ chunk: Chunk, offset: Int) -> Int {
     print(String.init(format: "%04d ", offset), terminator: "")
     
-    if (offset > 0 && chunk.lines[offset] == chunk.lines[offset - 1]) {
+    if offset > 0 && !chunk.lines.isStartOfRun(offset) {
         print("   | ", terminator: "")
     } else {
-        print(String.init(format: "%4d ", chunk.lines[offset]), terminator: "")
+        print(String.init(format: "%4d ", chunk.lines.lookup(offset) ?? 0), terminator: "")
     }
     
     let instruction = OpCode.init(rawValue: chunk.code[offset])

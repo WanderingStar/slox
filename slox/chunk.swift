@@ -16,7 +16,7 @@ struct Chunk {
     var count = 0
     var capacity = 0
     var code: [Int8] = []
-    var lines: [Int] = []
+    var lines = runLengthEncoded<Int>()
     var constants: ValueArray = ValueArray()
     
     mutating func write(op: OpCode, line: Int) {
@@ -27,10 +27,9 @@ struct Chunk {
         if capacity < count + 1 {
             capacity = capacity < 8 ? 8 : 2 * capacity
             code.reserveCapacity(capacity)
-            lines.reserveCapacity(capacity)
         }
         code.append(byte)
-        lines.append(line)
+        lines.add(line, at: count)
         count += 1
     }
     
@@ -38,7 +37,7 @@ struct Chunk {
         count = 0
         capacity = 0
         code = []
-        lines = []
+        lines = runLengthEncoded<Int>()
         constants.free()
     }
     
