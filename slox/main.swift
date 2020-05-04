@@ -9,6 +9,12 @@
 import Foundation
 
 var chunk = Chunk()
-chunk.write(byte: OpCode.Return.rawValue)
+
+let constant = chunk.addConstant(value: 1.2)
+chunk.write(op: .Constant, line: 123)
+chunk.write(byte: Int8(constant), line: 123)
+
+chunk.write(op: .Return, line: 123)
+
 disassembleChunk(chunk, name: "test chunk")
 chunk.free()
