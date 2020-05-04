@@ -8,5 +8,7 @@
 
 import Foundation
 
-print("Hello, World!")
-
+var chunk = Chunk()
+chunk.write(byte: OpCode.Return.rawValue)
+disassembleChunk(chunk, name: "test chunk")
+chunk.free()
