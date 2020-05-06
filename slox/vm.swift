@@ -30,6 +30,11 @@ class VM {
         return run()
     }
     
+    func interpret(source: String) -> InterpretResult {
+        print(source)
+        return .Ok
+    }
+    
     func push(_ value: Value) {
         stack.append(value)
     }
@@ -79,7 +84,6 @@ class VM {
             default:
                 return .RuntimeError
             }
-            
         }
     }
 }
