@@ -10,6 +10,12 @@ import Foundation
 
 typealias Value = Double
 
+extension Value {
+    var description: String {
+        return String.init(format: "%g", self)
+    }
+}
+
 struct ValueArray {
     var count = 0
     var capacity = 0
@@ -28,11 +34,5 @@ struct ValueArray {
         count = 0
         capacity = 0
         values = []
-    }
-}
-
-extension Value {
-    func print() {
-        Swift.print(String.init(format: "%g", self), terminator: "")
     }
 }

@@ -29,7 +29,7 @@ struct Chunk {
             code.reserveCapacity(capacity)
         }
         code.append(byte)
-        lines.add(line, at: count)
+        lines.append(line, at: count)
         count += 1
     }
     

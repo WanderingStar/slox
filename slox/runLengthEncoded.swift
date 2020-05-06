@@ -11,7 +11,7 @@ import Foundation
 struct runLengthEncoded<T: Equatable> {
     var items: [(Int, T)] = []
     
-    mutating func add(_ item: T, at: Int) {
+    mutating func append(_ item: T, at: Int) {
         if let (_, prev) = items.last {
             if prev != item {
                 items.append((at, item))
@@ -30,6 +30,10 @@ struct runLengthEncoded<T: Equatable> {
             prev = item
         }
         return prev
+    }
+    
+    subscript(index: Int) -> T? {
+        lookup(index)
     }
     
     func isStartOfRun(_ at: Int) -> Bool {
