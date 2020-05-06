@@ -16,16 +16,9 @@ class VM {
     var chunk = Chunk()
     var ip = 0
     var debugTraceExecution = true
-    var stack: [Value]
-    var stackTop = 0
+    var stack: [Value] = []
     
     init() {
-        stack = Array(repeating: 0, count: 256)
-        resetStack()
-    }
-    
-    func resetStack() {
-        stackTop = 0
     }
     
     func free() {
@@ -38,13 +31,11 @@ class VM {
     }
     
     func push(_ value: Value) {
-        stack[stackTop] = value
-        stackTop += 1
+        stack.append(value)
     }
     
     func pop() -> Value {
-        stackTop -= 1
-        return stack[stackTop]
+        return stack.popLast()!
     }
     
     func readByte() -> Int8 {
@@ -65,7 +56,7 @@ class VM {
         while true {
             if debugTraceExecution {
                 print("          ", terminator: "")
-                for slot in stack[0..<stackTop] {
+                for slot in stack {
                     print("[ \(slot) ]", terminator: "")
                 }
                 print()

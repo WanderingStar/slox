@@ -9,4 +9,5 @@ But I didn't really feel like using Unsafe pointers, so I'm going to cheat and u
 
 Challenges:
 - 14.1 RLE line numbers
+- 15.3 but lazy. Replaced stack with a Swift stack
 
