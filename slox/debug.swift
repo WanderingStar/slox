@@ -41,6 +41,16 @@ func disassembleInstruction(_ chunk: Chunk, offset: Int) -> Int {
     switch instruction {
     case .Constant:
         return constantInstruction("OP_CONSTANT", chunk: chunk, offset: offset)
+    case .Add:
+        return simpleInstruction("OP_ADD", offset: offset)
+    case .Subtract:
+        return simpleInstruction("OP_SUBTRACT", offset: offset)
+    case .Multiply:
+        return simpleInstruction("OP_MULTIPLY", offset: offset)
+    case .Divide:
+        return simpleInstruction("OP_DIVIDE", offset: offset)
+    case .Negate:
+        return simpleInstruction("OP_NEGATE", offset: offset)
     case .Return:
         return simpleInstruction("OP_RETURN", offset: offset)
     default:

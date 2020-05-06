@@ -9,7 +9,7 @@
 import Foundation
 
 enum OpCode: Int8 {
-    case Constant, Return 
+    case Constant, Add, Subtract, Multiply, Divide, Negate, Return 
 }
 
 struct Chunk {

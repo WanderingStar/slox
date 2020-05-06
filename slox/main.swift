@@ -12,15 +12,25 @@ import Foundation
 
 var chunk = Chunk()
 
-let constant = chunk.addConstant(value: 1.2)
 chunk.write(op: .Constant, line: 123)
-chunk.write(byte: Int8(constant), line: 123)
+chunk.write(byte: Int8(chunk.addConstant(value: 1.2)), line: 123)
+
+chunk.write(op: .Constant, line: 123)
+chunk.write(byte: Int8(chunk.addConstant(value: 3.4)), line: 123)
+
+chunk.write(op: .Add, line: 123)
+
+chunk.write(op: .Constant, line: 123)
+chunk.write(byte: Int8(chunk.addConstant(value: 5.6)), line: 123)
+
+chunk.write(op: .Divide, line: 123);
+chunk.write(op: .Negate, line: 123);
 
 chunk.write(op: .Return, line: 123)
 
 disassembleChunk(chunk, name: "test chunk")
 let vm = VM()
-vm.interpret(chunk: chunk)
+_ = vm.interpret(chunk: chunk)
 vm.free()
 chunk.free()
 

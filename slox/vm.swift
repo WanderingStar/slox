@@ -56,6 +56,11 @@ class VM {
         return chunk.constants.values[Int(readByte())]
     }
     
+    func binaryOp(_ op: (Value, Value) -> Value) {
+        let b = pop(), a = pop()
+        push(op(a, b))
+    }
+    
     func run() -> InterpretResult {
         while true {
             if debugTraceExecution {
@@ -71,6 +76,12 @@ class VM {
             case .Constant:
                 let constant = readConstant()
                 push(constant)
+            case .Add: binaryOp(+)
+            case .Subtract: binaryOp(-)
+            case .Multiply: binaryOp(*)
+            case .Divide: binaryOp(/)
+            case .Negate:
+                push(-pop())
             case .Return:
                 print(pop())
                 return .Ok
