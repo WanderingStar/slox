@@ -88,7 +88,12 @@ class compiler {
     }
     
     var currentChunk: Chunk {
-        return compilingChunk
+        get {
+            return compilingChunk
+        }
+        set(newChunk) {
+            compilingChunk = newChunk
+        }
     }
     
     func emit(byte: UInt8) {
@@ -104,12 +109,36 @@ class compiler {
         emit(byte: byte)
     }
     
+    func emit(constant: Value) {
+        emit(opCode: .Constant, byte: makeConstant(value: constant))
+    }
+    
     func emitReturn() {
         emit(opCode: .Return)
     }
     
+    func makeConstant(value: Value) -> UInt8 {
+        let constant = currentChunk.addConstant(value: value)
+        if (constant > UINT8_MAX) {
+            parser.error(message: "Too many constants in one chunk.")
+            return 0;
+        }
+        return UInt8(constant)
+    }
+    
+    
     func endCompiler() {
         emitReturn()
+    }
+    
+    func number() {
+        guard let string = parser.previous?.string,
+            let value = Value(string)
+            else {
+                parser.error(message: "Number with no previous.")
+                return
+        }
+        emit(constant: value)
     }
     
     func expression() {

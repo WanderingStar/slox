@@ -38,6 +38,10 @@ struct Token {
     let type: TokenType
     let text: Substring  // to save reallocating strings
     let line: Int
+    
+    var string: String {
+        return String(text)
+    }
 }
 
 func isDigit(_ c: Character) -> Bool {
