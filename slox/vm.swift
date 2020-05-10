@@ -33,7 +33,8 @@ class VM {
     }
     
     func interpret(source: String) -> InterpretResult {
-        guard let compiled = compile(source: source) else {
+        let compiler = Compiler(source: source, chunk: chunk)
+        guard let compiled = compiler.compile() else {
             return .CompileError
         }
         chunk = compiled

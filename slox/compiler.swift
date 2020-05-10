@@ -82,9 +82,32 @@ enum Precedence: Int {
     Unary,      // ! -
     Call,       // . ()
     Primary
+    
+    var higher: Precedence? {
+        return Precedence(rawValue: rawValue + 1)
+    }
+}
+extension Precedence: Comparable {
+    static func < (lhs: Precedence, rhs: Precedence) -> Bool {
+        return lhs.rawValue < rhs.rawValue
+    }
 }
 
-class compiler {
+typealias ParseFn = (Compiler) -> () -> ()
+
+struct ParseRule {
+    let prefix: ParseFn?
+    let infix: ParseFn?
+    let precedence: Precedence
+    
+    init(_ prefix: ParseFn?, _ infix: ParseFn?, _ precedence: Precedence) {
+        self.prefix = prefix
+        self.infix = infix
+        self.precedence = precedence
+    }
+}
+
+class Compiler {
     var parser: Parser
     var compilingChunk: Chunk
     
@@ -93,12 +116,12 @@ class compiler {
         compilingChunk = chunk
     }
     
-    func compile() -> Bool {
+    func compile() -> Chunk? {
         _ = parser.advance()
         expression()
         parser.consume(type: .tokenEOF, message: "Expect end of expression")
         endCompiler()
-        return !parser.hadError
+        return parser.hadError ? nil : currentChunk
     }
     
     var currentChunk: Chunk {
@@ -144,6 +167,33 @@ class compiler {
         emitReturn()
     }
     
+    func binary() {
+        // Remember the operator.
+        guard let operatorType = parser.previous?.type
+            else {
+                parser.error(message: "Binary with no previous.")
+                return
+        }
+        
+        // Compile the right operand.
+        let rule = Compiler.getRule(type: operatorType)
+        guard let nextPrecedence = rule.precedence.higher else {
+            parser.error(message: "No higher precedence.")
+            return
+        }
+        parsePrecedence(nextPrecedence)
+        
+        // Emit the operator instruction.
+        switch operatorType {
+        case .tokenPlus: emit(opCode: .Add)
+        case .tokenMinus: emit(opCode: .Subtract)
+        case .tokenStar: emit(opCode: .Multiply)
+        case .tokenSlash: emit(opCode: .Divide)
+        default:
+            return // Unreachable.
+        }
+    }
+    
     func grouping() {
         expression()
         parser.consume(type: .tokenRightParen,
@@ -179,11 +229,81 @@ class compiler {
     }
     
     func parsePrecedence(_ precedence: Precedence) {
+        parser.advance()
+        guard let operatorType = parser.previous?.type
+            else {
+                parser.error(message: "parsePrecedence with no previous.")
+                return
+        }
+        guard let prefixRule = Compiler.getRule(type: operatorType).prefix
+            else {
+                parser.error(message: "Expect expression.")
+                return
+        }
         
+        prefixRule(self)()
+        
+        while let operatorType = parser.current?.type,
+        precedence <= Compiler.getRule(type: operatorType).precedence {
+            parser.advance()
+            guard let infixRule = Compiler.getRule(type: operatorType).infix
+                else {
+                    parser.error(message: "Expect expression.")
+                    return
+            }
+            
+            infixRule(self)()
+        }
     }
     
     func expression() {
         parsePrecedence(.Assignment)
     }
     
+    static let rules: [ParseRule] = [
+        ParseRule( grouping, nil,    .None ),       // TOKEN_LEFT_PAREN
+        ParseRule( nil,      nil,    .None ),       // TOKEN_RIGHT_PAREN
+        ParseRule( nil,      nil,    .None ),       // TOKEN_LEFT_BRACE
+        ParseRule( nil,      nil,    .None ),       // TOKEN_RIGHT_BRACE
+        ParseRule( nil,      nil,    .None ),       // TOKEN_COMMA
+        ParseRule( nil,      nil,    .None ),       // TOKEN_DOT
+        ParseRule( unary,    binary, .Term ),       // TOKEN_MINUS
+        ParseRule( nil,      binary, .Term ),       // TOKEN_PLUS
+        ParseRule( nil,      nil,    .None ),       // TOKEN_SEMICOLON
+        ParseRule( nil,      binary, .Factor ),     // TOKEN_SLASH
+        ParseRule( nil,      binary, .Factor ),     // TOKEN_STAR
+        ParseRule( nil,      nil,    .None ),       // TOKEN_BANG
+        ParseRule( nil,      nil,    .None ),       // TOKEN_BANG_EQUAL
+        ParseRule( nil,      nil,    .None ),       // TOKEN_EQUAL
+        ParseRule( nil,      nil,    .None ),       // TOKEN_EQUAL_EQUAL
+        ParseRule( nil,      nil,    .None ),       // TOKEN_GREATER
+        ParseRule( nil,      nil,    .None ),       // TOKEN_GREATER_EQUAL
+        ParseRule( nil,      nil,    .None ),       // TOKEN_LESS
+        ParseRule( nil,      nil,    .None ),       // TOKEN_LESS_EQUAL
+        ParseRule( nil,      nil,    .None ),       // TOKEN_IDENTIFIER
+        ParseRule( nil,      nil,    .None ),       // TOKEN_STRING
+        ParseRule( number,   nil,    .None ),       // TOKEN_NUMBER
+        ParseRule( nil,      nil,    .None ),       // TOKEN_AND
+        ParseRule( nil,      nil,    .None ),       // TOKEN_CLASS
+        ParseRule( nil,      nil,    .None ),       // TOKEN_ELSE
+        ParseRule( nil,      nil,    .None ),       // TOKEN_FALSE
+        ParseRule( nil,      nil,    .None ),       // TOKEN_FOR
+        ParseRule( nil,      nil,    .None ),       // TOKEN_FUN
+        ParseRule( nil,      nil,    .None ),       // TOKEN_IF
+        ParseRule( nil,      nil,    .None ),       // TOKEN_NIL
+        ParseRule( nil,      nil,    .None ),       // TOKEN_OR
+        ParseRule( nil,      nil,    .None ),       // TOKEN_PRINT
+        ParseRule( nil,      nil,    .None ),       // TOKEN_RETURN
+        ParseRule( nil,      nil,    .None ),       // TOKEN_SUPER
+        ParseRule( nil,      nil,    .None ),       // TOKEN_THIS
+        ParseRule( nil,      nil,    .None ),       // TOKEN_TRUE
+        ParseRule( nil,      nil,    .None ),       // TOKEN_VAR
+        ParseRule( nil,      nil,    .None ),       // TOKEN_WHILE
+        ParseRule( nil,      nil,    .None ),       // TOKEN_ERROR
+        ParseRule( nil,      nil,    .None ),       // TOKEN_EOF
+    ]
+    
+    static func getRule(type: TokenType) -> ParseRule {
+        return rules[type.rawValue]
+    }
 }
