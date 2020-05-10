@@ -224,8 +224,8 @@ struct Scanner {
     }
     
     mutating func scanToken() -> Token {
-        start = current
         skipWhitespace()
+        start = current
         
         if isAtEnd {
             return Token(type: .tokenEOF, text: "", line: line)

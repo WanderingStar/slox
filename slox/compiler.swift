@@ -110,6 +110,7 @@ struct ParseRule {
 class Compiler {
     var parser: Parser
     var compilingChunk: Chunk
+    var debugPrintCode = true
     
     init(source: String, chunk: Chunk) {
         parser = Parser(source: source)
@@ -164,6 +165,9 @@ class Compiler {
     }
     
     func endCompiler() {
+        if (debugPrintCode && !parser.hadError) {
+            disassembleChunk(currentChunk, name: "code")
+        }
         emitReturn()
     }
     
