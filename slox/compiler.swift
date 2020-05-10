@@ -126,9 +126,14 @@ class compiler {
         return UInt8(constant)
     }
     
-    
     func endCompiler() {
         emitReturn()
+    }
+    
+    func grouping() {
+        expression()
+        parser.consume(type: .tokenRightParen,
+                       message: "Expect ')' after expression.")
     }
     
     func number() {
