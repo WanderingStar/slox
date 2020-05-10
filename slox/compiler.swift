@@ -70,6 +70,20 @@ struct Parser {
     }
 }
 
+enum Precedence: Int {
+    case None,
+    Assignment, // =
+    Or,         // or
+    And,        // and
+    Equality,   // == !==
+    Comparison, // < > <= >=
+    Term,       // + -
+    Factor,     // * /
+    Unary,      // ! -
+    Call,       // . ()
+    Primary
+}
+
 class compiler {
     var parser: Parser
     var compilingChunk: Chunk
@@ -146,8 +160,30 @@ class compiler {
         emit(constant: value)
     }
     
-    func expression() {
+    func unary() {
+        guard let operatorType = parser.previous?.type
+            else {
+                parser.error(message: "Unary with no previous.")
+                return
+        }
+        // Compile the operand
+        parsePrecedence(.Unary)
         
+        // emit the operator instruction
+        switch operatorType {
+        case .tokenMinus:
+            emit(opCode: .Negate)
+        default:
+            return; // Unreachable.
+        }
+    }
+    
+    func parsePrecedence(_ precedence: Precedence) {
+        
+    }
+    
+    func expression() {
+        parsePrecedence(.Assignment)
     }
     
 }
