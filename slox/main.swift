@@ -15,6 +15,10 @@ final class StandardErrorOutputStream: TextOutputStream {
 }
 var stderr = StandardErrorOutputStream()
 
+func printErr(format: String, _ arguments: Any...) {
+    print(String.init(format: format, arguments), terminator:"", to:&stderr)
+}
+
 func repl(vm: VM) {
     while (true) {
         print("> ", terminator:"")

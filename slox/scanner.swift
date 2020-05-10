@@ -36,7 +36,7 @@ enum TokenType: Int {
 
 struct Token {
     let type: TokenType
-    let string: Substring  // to save reallocating strings
+    let text: Substring  // to save reallocating strings
     let line: Int
 }
 
@@ -103,12 +103,12 @@ struct Scanner {
     
     func token(type: TokenType) -> Token {
         return Token(type: type,
-                     string: source[startIndex..<currentIndex],
+                     text: source[startIndex..<currentIndex],
                      line: line)
     }
     
     func errorToken(message: String) -> Token {
-        return Token(type: .tokenError, string: message[..<message.endIndex], line: line)
+        return Token(type: .tokenError, text: message[..<message.endIndex], line: line)
     }
     
     mutating func skipWhitespace() {
@@ -224,7 +224,7 @@ struct Scanner {
         skipWhitespace()
         
         if isAtEnd {
-            return Token(type: .tokenEOF, string: "", line: line)
+            return Token(type: .tokenEOF, text: "", line: line)
         }
         
         let c = advance()

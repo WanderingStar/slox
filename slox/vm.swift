@@ -22,6 +22,8 @@ class VM {
     }
     
     func free() {
+        chunk = Chunk()
+        stack = []
     }
     
     func interpret(chunk: Chunk) -> InterpretResult {
@@ -31,8 +33,14 @@ class VM {
     }
     
     func interpret(source: String) -> InterpretResult {
-        print(source)
-        return .Ok
+        guard let compiled = compile(source: source) else {
+            return .CompileError
+        }
+        chunk = compiled
+        ip = 0
+        let result = run()
+        chunk.free()
+        return result
     }
     
     func push(_ value: Value) {
@@ -43,7 +51,7 @@ class VM {
         return stack.popLast()!
     }
     
-    func readByte() -> Int8 {
+    func readByte() -> UInt8 {
         defer { ip += 1 }
         return chunk.code[ip]
     }

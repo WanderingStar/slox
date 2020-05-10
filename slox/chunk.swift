@@ -8,14 +8,14 @@
 
 import Foundation
 
-enum OpCode: Int8 {
+enum OpCode: UInt8 {
     case Constant, Add, Subtract, Multiply, Divide, Negate, Return 
 }
 
 struct Chunk {
     var count = 0
     var capacity = 0
-    var code: [Int8] = []
+    var code: [UInt8] = []
     var lines = runLengthEncoded<Int>()
     var constants: ValueArray = ValueArray()
     
@@ -23,7 +23,7 @@ struct Chunk {
         write(byte: op.rawValue, line: line)
     }
 
-    mutating func write(byte: Int8, line: Int) {
+    mutating func write(byte: UInt8, line: Int) {
         if capacity < count + 1 {
             capacity = capacity < 8 ? 8 : 2 * capacity
             code.reserveCapacity(capacity)
