@@ -23,6 +23,17 @@ enum Value : CustomStringConvertible {
         }
     }
     
+    var isFalsey: Bool {
+        switch self {
+        case .valBool(let value):
+            return !value
+        case .valNil:
+            return true
+        default:
+            return false
+        }
+    }
+    
     var boolean: Bool? {
         switch self {
         case .valBool(let value):

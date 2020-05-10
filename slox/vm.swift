@@ -114,6 +114,8 @@ class VM {
                 if let error = binaryOp(/) {
                     return error
                 }
+            case .Not:
+                push(.valBool(pop().isFalsey))
             case .Negate:
                 switch peek(0) {
                 case .valNumber:

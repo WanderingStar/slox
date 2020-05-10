@@ -49,6 +49,8 @@ func disassembleInstruction(_ chunk: Chunk, offset: Int) -> Int {
         return simpleInstruction("OP_MULTIPLY", offset: offset)
     case .Divide:
         return simpleInstruction("OP_DIVIDE", offset: offset)
+    case .Not:
+        return simpleInstruction("OP_NOT", offset: offset)
     case .Negate:
         return simpleInstruction("OP_NEGATE", offset: offset)
     case .Return:

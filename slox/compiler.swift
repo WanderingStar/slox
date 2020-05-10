@@ -236,6 +236,8 @@ class Compiler {
         
         // emit the operator instruction
         switch operatorType {
+        case .tokenBang:
+            emit(opCode: .Not)
         case .tokenMinus:
             emit(opCode: .Negate)
         default:
@@ -287,7 +289,7 @@ class Compiler {
         ParseRule( nil,      nil,    .None ),       // TOKEN_SEMICOLON
         ParseRule( nil,      binary, .Factor ),     // TOKEN_SLASH
         ParseRule( nil,      binary, .Factor ),     // TOKEN_STAR
-        ParseRule( nil,      nil,    .None ),       // TOKEN_BANG
+        ParseRule( unary,    nil,    .None ),       // TOKEN_BANG
         ParseRule( nil,      nil,    .None ),       // TOKEN_BANG_EQUAL
         ParseRule( nil,      nil,    .None ),       // TOKEN_EQUAL
         ParseRule( nil,      nil,    .None ),       // TOKEN_EQUAL_EQUAL

@@ -10,7 +10,8 @@ import Foundation
 
 enum OpCode: UInt8 {
     case Constant, Nil, True, False,
-    Add, Subtract, Multiply, Divide, Negate,
+    Add, Subtract, Multiply, Divide,
+    Not, Negate,
     Return 
 }
 
