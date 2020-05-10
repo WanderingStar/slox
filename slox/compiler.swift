@@ -206,11 +206,12 @@ class Compiler {
     
     func number() {
         guard let string = parser.previous?.string,
-            let value = Value(string)
+            let number = Double(string)
             else {
                 parser.error(message: "Number with no previous.")
                 return
         }
+        let value = Value.valNumber(number)
         emit(constant: value)
     }
     

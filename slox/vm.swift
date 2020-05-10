@@ -52,6 +52,10 @@ class VM {
         return stack.popLast()!
     }
     
+    func peek(_ distance: Int) -> Value {
+        return stack[-1 - distance]
+    }
+    
     func readByte() -> UInt8 {
         defer { ip += 1 }
         return chunk.code[ip]
@@ -61,9 +65,16 @@ class VM {
         return chunk.constants.values[Int(readByte())]
     }
     
-    func binaryOp(_ op: (Value, Value) -> Value) {
+    func binaryOp(_ op: (Value, Value) -> Value) -> InterpretResult? {
         let b = pop(), a = pop()
-        push(op(a, b))
+        switch (a, b) {
+        case (.valNumber, .valNumber):
+            push(op(a, b))
+            return nil
+        default:
+            runtimeError(format: "Operands must be numbers.")
+            return .RuntimeError
+        }
     }
     
     func run() -> InterpretResult {
@@ -81,12 +92,30 @@ class VM {
             case .Constant:
                 let constant = readConstant()
                 push(constant)
-            case .Add: binaryOp(+)
-            case .Subtract: binaryOp(-)
-            case .Multiply: binaryOp(*)
-            case .Divide: binaryOp(/)
+            case .Add:
+                if let error = binaryOp(+) {
+                    return error
+                }
+            case .Subtract:
+                if let error = binaryOp(-) {
+                    return error
+                }
+            case .Multiply:
+                if let error = binaryOp(*) {
+                    return error
+                }
+            case .Divide:
+                if let error = binaryOp(/) {
+                    return error
+                }
             case .Negate:
-                push(-pop())
+                switch peek(0) {
+                case .valNumber:
+                    push(-pop())
+                default:
+                    runtimeError(format: "Operand must be a number.");
+                    return .RuntimeError
+                }
             case .Return:
                 print(pop())
                 return .Ok
@@ -94,5 +123,12 @@ class VM {
                 return .RuntimeError
             }
         }
+    }
+    
+    func runtimeError(format: String, _ arguments: Any...) {
+        printErr(format: format + "\n", arguments)
+        let instruction = ip - 1
+        let line = chunk.lines[instruction]
+        printErr(format: "[line \(line ?? -1)] in script\n")
     }
 }
