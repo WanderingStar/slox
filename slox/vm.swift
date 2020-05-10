@@ -92,6 +92,12 @@ class VM {
             case .Constant:
                 let constant = readConstant()
                 push(constant)
+            case .Nil:
+                push(.valNil(()))
+            case .True:
+                push(.valBool(true))
+            case .False:
+                push(.valBool(false))
             case .Add:
                 if let error = binaryOp(+) {
                     return error

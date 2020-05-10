@@ -9,7 +9,9 @@
 import Foundation
 
 enum OpCode: UInt8 {
-    case Constant, Add, Subtract, Multiply, Divide, Negate, Return 
+    case Constant, Nil, True, False,
+    Add, Subtract, Multiply, Divide, Negate,
+    Return 
 }
 
 struct Chunk {

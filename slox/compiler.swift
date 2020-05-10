@@ -194,7 +194,17 @@ class Compiler {
         case .tokenStar: emit(opCode: .Multiply)
         case .tokenSlash: emit(opCode: .Divide)
         default:
-            return // Unreachable.
+            assert(false) // Unreachable.
+        }
+    }
+    
+    func literal() {
+        switch parser.previous?.type {
+        case .tokenFalse: emit(opCode: .False)
+        case .tokenNil: emit(opCode: .Nil)
+        case .tokenTrue: emit(opCode: .True)
+        default:
+            assert(false) // Unreachable.
         }
     }
     
@@ -229,7 +239,7 @@ class Compiler {
         case .tokenMinus:
             emit(opCode: .Negate)
         default:
-            return; // Unreachable.
+            assert(false); // Unreachable.
         }
     }
     
@@ -291,17 +301,17 @@ class Compiler {
         ParseRule( nil,      nil,    .None ),       // TOKEN_AND
         ParseRule( nil,      nil,    .None ),       // TOKEN_CLASS
         ParseRule( nil,      nil,    .None ),       // TOKEN_ELSE
-        ParseRule( nil,      nil,    .None ),       // TOKEN_FALSE
+        ParseRule( literal,  nil,    .None ),       // TOKEN_FALSE
         ParseRule( nil,      nil,    .None ),       // TOKEN_FOR
         ParseRule( nil,      nil,    .None ),       // TOKEN_FUN
         ParseRule( nil,      nil,    .None ),       // TOKEN_IF
-        ParseRule( nil,      nil,    .None ),       // TOKEN_NIL
+        ParseRule( literal,  nil,    .None ),       // TOKEN_NIL
         ParseRule( nil,      nil,    .None ),       // TOKEN_OR
         ParseRule( nil,      nil,    .None ),       // TOKEN_PRINT
         ParseRule( nil,      nil,    .None ),       // TOKEN_RETURN
         ParseRule( nil,      nil,    .None ),       // TOKEN_SUPER
         ParseRule( nil,      nil,    .None ),       // TOKEN_THIS
-        ParseRule( nil,      nil,    .None ),       // TOKEN_TRUE
+        ParseRule( literal,  nil,    .None ),       // TOKEN_TRUE
         ParseRule( nil,      nil,    .None ),       // TOKEN_VAR
         ParseRule( nil,      nil,    .None ),       // TOKEN_WHILE
         ParseRule( nil,      nil,    .None ),       // TOKEN_ERROR
