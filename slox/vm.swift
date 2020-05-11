@@ -98,6 +98,18 @@ class VM {
                 push(.valBool(true))
             case .False:
                 push(.valBool(false))
+                
+            case .Equal:
+                let b = pop(), a = pop()
+                push(.valBool(a == b))
+            case .Greater:
+                if let error = binaryOp(>) {
+                    return error
+                }
+            case .Less:
+                if let error = binaryOp(<) {
+                    return error
+                }
             case .Add:
                 if let error = binaryOp(+) {
                     return error

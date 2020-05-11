@@ -58,6 +58,7 @@ func +(a: Value, b: Value) -> Value {
     case (.valNumber(let dA), .valNumber(let dB)):
         return .valNumber(dA + dB)
     default:
+        assert(false, "Can only add numbers.")
         return .valNumber(Double.nan)
     }
 }
@@ -68,6 +69,7 @@ func -(a: Value, b: Value) -> Value {
     case (.valNumber(let dA), .valNumber(let dB)):
         return .valNumber(dA - dB)
     default:
+        assert(false, "Can only subtract numbers.")
         return .valNumber(Double.nan)
     }
 }
@@ -77,16 +79,17 @@ func *(a: Value, b: Value) -> Value {
     case (.valNumber(let dA), .valNumber(let dB)):
         return .valNumber(dA * dB)
     default:
+        assert(false, "Can only multiply numbers.")
         return .valNumber(Double.nan)
     }
 }
-
 
 func /(a: Value, b: Value) -> Value {
     switch (a, b) {
     case (.valNumber(let dA), .valNumber(let dB)):
         return .valNumber(dA / dB)
     default:
+        assert(false, "Can only divide numbers.")
         return .valNumber(Double.nan)
     }
 }
@@ -96,7 +99,41 @@ prefix func -(a: Value) -> Value {
     case .valNumber(let dA):
         return .valNumber(-dA)
     default:
+        assert(false, "Can only negate numbers.")
         return .valNumber(Double.nan)
+    }
+}
+
+func >(a: Value, b: Value) -> Value {
+    switch (a, b) {
+    case (.valNumber(let dA), .valNumber(let dB)):
+        return .valBool(dA > dB)
+    default:
+        assert(false, "Can only compare numbers.")
+        return .valBool(false)
+    }
+}
+
+func <(a: Value, b: Value) -> Value {
+    switch (a, b) {
+    case (.valNumber(let dA), .valNumber(let dB)):
+        return .valBool(dA < dB)
+    default:
+        assert(false, "Can only compare numbers.")
+        return .valBool(false)
+    }
+}
+
+func ==(a: Value, b: Value) -> Bool {
+    switch (a, b) {
+    case (.valBool(let vA), .valBool(let vB)):
+        return vA == vB
+    case (.valNil, .valNil):
+        return true
+    case (.valNumber(let vA), .valNumber(let vB)):
+        return vA == vB
+    default:
+        return false
     }
 }
 

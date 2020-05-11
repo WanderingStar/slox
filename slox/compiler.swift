@@ -189,6 +189,18 @@ class Compiler {
         
         // Emit the operator instruction.
         switch operatorType {
+        case .tokenBangEqual:
+            emit(opCode: .Equal)
+            emit(opCode: .Not)
+        case .tokenEqualEqual: emit(opCode: .Equal)
+        case .tokenGreater: emit(opCode: .Greater)
+        case .tokenGreaterEqual:
+            emit(opCode: .Less)
+            emit(opCode: .Not)
+        case .tokenLess: emit(opCode: .Less)
+        case .tokenLessEqual:
+            emit(opCode: .Greater)
+            emit(opCode: .Not)
         case .tokenPlus: emit(opCode: .Add)
         case .tokenMinus: emit(opCode: .Subtract)
         case .tokenStar: emit(opCode: .Multiply)
@@ -290,13 +302,13 @@ class Compiler {
         ParseRule( nil,      binary, .Factor ),     // TOKEN_SLASH
         ParseRule( nil,      binary, .Factor ),     // TOKEN_STAR
         ParseRule( unary,    nil,    .None ),       // TOKEN_BANG
-        ParseRule( nil,      nil,    .None ),       // TOKEN_BANG_EQUAL
+        ParseRule( nil,      binary, .Equality ),   // TOKEN_BANG_EQUAL
         ParseRule( nil,      nil,    .None ),       // TOKEN_EQUAL
-        ParseRule( nil,      nil,    .None ),       // TOKEN_EQUAL_EQUAL
-        ParseRule( nil,      nil,    .None ),       // TOKEN_GREATER
-        ParseRule( nil,      nil,    .None ),       // TOKEN_GREATER_EQUAL
-        ParseRule( nil,      nil,    .None ),       // TOKEN_LESS
-        ParseRule( nil,      nil,    .None ),       // TOKEN_LESS_EQUAL
+        ParseRule( nil,      binary, .Equality ),   // TOKEN_EQUAL_EQUAL
+        ParseRule( nil,      binary, .Comparison ), // TOKEN_GREATER
+        ParseRule( nil,      binary, .Comparison ), // TOKEN_GREATER_EQUAL
+        ParseRule( nil,      binary, .Comparison ), // TOKEN_LESS
+        ParseRule( nil,      binary, .Comparison ), // TOKEN_LESS_EQUAL
         ParseRule( nil,      nil,    .None ),       // TOKEN_IDENTIFIER
         ParseRule( nil,      nil,    .None ),       // TOKEN_STRING
         ParseRule( number,   nil,    .None ),       // TOKEN_NUMBER

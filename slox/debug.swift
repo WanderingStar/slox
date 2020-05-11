@@ -41,6 +41,18 @@ func disassembleInstruction(_ chunk: Chunk, offset: Int) -> Int {
     switch instruction {
     case .Constant:
         return constantInstruction("OP_CONSTANT", chunk: chunk, offset: offset)
+    case .Nil:
+        return simpleInstruction("OP_NIL", offset: offset)
+    case .True:
+        return simpleInstruction("OP_TRUE", offset: offset)
+    case .False:
+        return simpleInstruction("OP_FALSE", offset: offset)
+    case .Equal:
+        return simpleInstruction("OP_EQUAL", offset: offset)
+    case .Greater:
+        return simpleInstruction("OP_GREATER", offset: offset)
+    case .Less:
+        return simpleInstruction("OP_LESS", offset: offset)
     case .Add:
         return simpleInstruction("OP_ADD", offset: offset)
     case .Subtract:
@@ -55,7 +67,7 @@ func disassembleInstruction(_ chunk: Chunk, offset: Int) -> Int {
         return simpleInstruction("OP_NEGATE", offset: offset)
     case .Return:
         return simpleInstruction("OP_RETURN", offset: offset)
-    default:
+    case .none:
         print("Unknown opcode \(chunk.code[offset])")
         return offset + 1
     }
