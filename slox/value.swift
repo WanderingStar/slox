@@ -21,7 +21,7 @@ enum Value : CustomStringConvertible {
             return String.init(format: "%g", value)
         case .valObj(let obj):
             switch obj.pointee.type {
-            case .String: return asString() ?? "<bad Obj>"
+            case .String: return asString ?? "<bad Obj>"
             }
         }
     }

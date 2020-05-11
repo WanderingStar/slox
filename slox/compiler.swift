@@ -241,7 +241,9 @@ class Compiler {
         guard let text = parser.previous?.text else {
             assert(false, "Tried to make a string out of a bad token")
         }
-        emit(constant: .valObj(copyString(text))
+        emit(constant: .valObj(copyString(text: text).withMemoryRebound(to: Obj.self, capacity: 1, { (ptr) -> UnsafeMutablePointer<Obj> in
+            return ptr
+        })))
     }
     
     func unary() {
