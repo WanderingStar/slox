@@ -9,7 +9,7 @@
 import Foundation
 
 enum Value : CustomStringConvertible {
-    case valBool(Bool), valNil(Void), valNumber(Double)
+    case valBool(Bool), valNil(Void), valNumber(Double), valObj(UnsafeMutablePointer<Obj>)
     
     var description: String {
         switch self {
@@ -19,7 +19,10 @@ enum Value : CustomStringConvertible {
             return "nil"
         case .valNumber(let value):
             return String.init(format: "%g", value)
-            
+        case .valObj(let obj):
+            switch obj.pointee.type {
+            case .String: return asString() ?? "<bad Obj>"
+            }
         }
     }
     
@@ -34,22 +37,25 @@ enum Value : CustomStringConvertible {
         }
     }
     
-    var boolean: Bool? {
-        switch self {
-        case .valBool(let value):
-            return value
-        default:
-            return nil
+    func isObjType(_ type: ObjType) -> Bool {
+        if case let .valObj(ptr) = self {
+            return ptr.pointee.type == type
         }
+        return false
     }
     
-    var number: Double? {
-        switch self {
-        case .valNumber(let value):
-            return value
-        default:
-            return nil
+    var asObjString: ObjString? {
+        if case let .valObj(ptr) = self {
+            return ptr.withMemoryRebound(to: ObjString.self, capacity: 1) {
+                (ptr) -> ObjString in
+                return ptr.pointee
+            }
         }
+        return nil
+    }
+    
+    var asString: String? {
+        return asObjString?.description
     }
 }
 
@@ -132,6 +138,8 @@ func ==(a: Value, b: Value) -> Bool {
         return true
     case (.valNumber(let vA), .valNumber(let vB)):
         return vA == vB
+    case (.valObj, .valObj):
+        return a.asString == b.asString
     default:
         return false
     }
@@ -155,5 +163,25 @@ struct ValueArray {
         count = 0
         capacity = 0
         values = []
+    }
+}
+
+enum ObjType: Int8 {
+    case String
+}
+
+struct Obj {
+    var type: ObjType
+}
+
+struct ObjString {
+    var obj: Obj
+    var length: Int
+    var chars: UnsafeMutablePointer<CChar>
+}
+
+extension ObjString : CustomStringConvertible {
+    var description: String {
+        return String(bytesNoCopy: chars, length: length, encoding: .ascii, freeWhenDone: false) ?? "<bad ObjString>"
     }
 }

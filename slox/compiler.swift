@@ -237,6 +237,13 @@ class Compiler {
         emit(constant: value)
     }
     
+    func string() {
+        guard let text = parser.previous?.text else {
+            assert(false, "Tried to make a string out of a bad token")
+        }
+        emit(constant: .valObj(copyString(text))
+    }
+    
     func unary() {
         guard let operatorType = parser.previous?.type
             else {
@@ -310,7 +317,7 @@ class Compiler {
         ParseRule( nil,      binary, .Comparison ), // TOKEN_LESS
         ParseRule( nil,      binary, .Comparison ), // TOKEN_LESS_EQUAL
         ParseRule( nil,      nil,    .None ),       // TOKEN_IDENTIFIER
-        ParseRule( nil,      nil,    .None ),       // TOKEN_STRING
+        ParseRule( string,   nil,    .None ),       // TOKEN_STRING
         ParseRule( number,   nil,    .None ),       // TOKEN_NUMBER
         ParseRule( nil,      nil,    .None ),       // TOKEN_AND
         ParseRule( nil,      nil,    .None ),       // TOKEN_CLASS
