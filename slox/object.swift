@@ -8,25 +8,30 @@
 
 import Foundation
 
-func copyString(text: Substring) -> UnsafeMutablePointer<ObjString> {
-    let count = text.utf8.count
-    let chars = text.withCString { (textPtr) -> UnsafeMutablePointer<CChar> in
-        let outPtr = UnsafeMutablePointer<CChar>.allocate(capacity: count + 1)
-        outPtr.initialize(from: textPtr, count: count)
-        outPtr[count] = CChar(0)
-        return outPtr
-    }
+enum ObjType: Int8 {
+    case String
     
-    return allocateString(chars: chars, length: count)
+    var structType: Any {
+        switch self {
+        case .String:
+            return ObjString.self
+        }
+    }
 }
 
-func allocateString(chars: UnsafeMutablePointer<CChar>, length: Int) -> UnsafeMutablePointer<ObjString> {
-    let ptr = UnsafeMutablePointer<ObjString>.allocate(capacity: 1)
-    ptr.withMemoryRebound(to: Obj.self, capacity: 1) { (objPtr) -> () in
-        objPtr.pointee.type = .String
+struct Obj {
+    var type: ObjType
+    var next: UnsafeMutablePointer<Obj>? = nil
+}
+
+struct ObjString {
+    var obj: Obj
+    var length: Int
+    var chars: UnsafeMutablePointer<CChar>
+}
+
+extension ObjString : CustomStringConvertible {
+    var description: String {
+        return String(bytesNoCopy: chars, length: length, encoding: .ascii, freeWhenDone: false) ?? "<bad ObjString>"
     }
-    ptr.pointee.length = length
-    ptr.pointee.chars = chars
-    
-    return ptr
 }

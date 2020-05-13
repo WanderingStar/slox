@@ -16,6 +16,7 @@
 		035979CF24626150009D024C /* compiler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035979CE24626150009D024C /* compiler.swift */; };
 		035979D124626157009D024C /* scanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035979D024626157009D024C /* scanner.swift */; };
 		035979D324690D46009D024C /* object.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035979D224690D45009D024C /* object.swift */; };
+		035979D5246BA191009D024C /* memory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035979D4246BA191009D024C /* memory.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -42,6 +43,7 @@
 		035979CE24626150009D024C /* compiler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = compiler.swift; sourceTree = "<group>"; };
 		035979D024626157009D024C /* scanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = scanner.swift; sourceTree = "<group>"; };
 		035979D224690D45009D024C /* object.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = object.swift; sourceTree = "<group>"; };
+		035979D4246BA191009D024C /* memory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = memory.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -84,6 +86,7 @@
 				035979CE24626150009D024C /* compiler.swift */,
 				035979D024626157009D024C /* scanner.swift */,
 				035979D224690D45009D024C /* object.swift */,
+				035979D4246BA191009D024C /* memory.swift */,
 			);
 			path = slox;
 			sourceTree = "<group>";
@@ -150,6 +153,7 @@
 				035979C6245FC163009D024C /* debug.swift in Sources */,
 				035979D124626157009D024C /* scanner.swift in Sources */,
 				035979CB245FDEAB009D024C /* runLengthEncoded.swift in Sources */,
+				035979D5246BA191009D024C /* memory.swift in Sources */,
 				035979CF24626150009D024C /* compiler.swift in Sources */,
 				035979BB245FB2DB009D024C /* main.swift in Sources */,
 				035979CD2460FB7C009D024C /* vm.swift in Sources */,

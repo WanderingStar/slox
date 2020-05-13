@@ -17,6 +17,7 @@ class VM {
     var ip = 0
     var debugTraceExecution = true
     var stack: [Value] = []
+    var objects: UnsafeMutablePointer<Obj>? = nil
     
     init() {
     }
@@ -24,6 +25,7 @@ class VM {
     func free() {
         chunk = Chunk()
         stack = []
+        freeObjects()
     }
     
     func interpret(chunk: Chunk) -> InterpretResult {
@@ -33,7 +35,7 @@ class VM {
     }
     
     func interpret(source: String) -> InterpretResult {
-        let compiler = Compiler(source: source, chunk: chunk)
+        let compiler = Compiler(source: source, chunk: chunk, vm: self)
         guard let compiled = compiler.compile() else {
             return .CompileError
         }
@@ -111,7 +113,9 @@ class VM {
                     return error
                 }
             case .Add:
-                if let error = binaryOp(+) {
+                if peek(0).isObjType(.String) && peek(1).isObjType(.String) {
+                    concatenate(a: peek(0), b: peek(0))
+                } else if let error = binaryOp(+) {
                     return error
                 }
             case .Subtract:
@@ -151,4 +155,5 @@ class VM {
         let line = chunk.lines[instruction]
         printErr(format: "[line \(line ?? -1)] in script\n")
     }
+
 }

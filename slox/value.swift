@@ -69,7 +69,6 @@ func +(a: Value, b: Value) -> Value {
     }
 }
 
-
 func -(a: Value, b: Value) -> Value {
     switch (a, b) {
     case (.valNumber(let dA), .valNumber(let dB)):
@@ -163,25 +162,5 @@ struct ValueArray {
         count = 0
         capacity = 0
         values = []
-    }
-}
-
-enum ObjType: Int8 {
-    case String
-}
-
-struct Obj {
-    var type: ObjType
-}
-
-struct ObjString {
-    var obj: Obj
-    var length: Int
-    var chars: UnsafeMutablePointer<CChar>
-}
-
-extension ObjString : CustomStringConvertible {
-    var description: String {
-        return String(bytesNoCopy: chars, length: length, encoding: .ascii, freeWhenDone: false) ?? "<bad ObjString>"
     }
 }

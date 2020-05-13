@@ -111,10 +111,12 @@ class Compiler {
     var parser: Parser
     var compilingChunk: Chunk
     var debugPrintCode = true
+    var vm: VM
     
-    init(source: String, chunk: Chunk) {
+    init(source: String, chunk: Chunk, vm: VM) {
         parser = Parser(source: source)
         compilingChunk = chunk
+        self.vm = vm
     }
     
     func compile() -> Chunk? {
@@ -241,7 +243,7 @@ class Compiler {
         guard let text = parser.previous?.text else {
             assert(false, "Tried to make a string out of a bad token")
         }
-        emit(constant: .valObj(copyString(text: text).withMemoryRebound(to: Obj.self, capacity: 1, { (ptr) -> UnsafeMutablePointer<Obj> in
+        emit(constant: .valObj(vm.copyString(text: text).withMemoryRebound(to: Obj.self, capacity: 1, { (ptr) -> UnsafeMutablePointer<Obj> in
             return ptr
         })))
     }
