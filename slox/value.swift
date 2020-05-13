@@ -55,7 +55,8 @@ enum Value : CustomStringConvertible {
     }
     
     var asString: String? {
-        return asObjString?.description
+        guard let objString = asObjString else { return nil }
+        return String(bytesNoCopy: objString.chars, length: objString.length, encoding: .ascii, freeWhenDone: false) ?? "<bad ObjString>"
     }
 }
 
