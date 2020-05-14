@@ -5,7 +5,7 @@ I've embarked in a perhaps silly project to do the second half not in C, but in 
 
 Why? To get myself back in the habit of writing Swift.
 
-But I didn't really feel like using Unsafe pointers, so I'm going to cheat and use Swift arrays (which are dynamic) and pretend that they're not dynamic.
+But I didn't really feel like using Unsafe pointers, so I'm going to cheat and use Swift arrays (which are dynamic) and pretend that they're not dynamic. **Update:** Joke's on me. I had to use unsafe pointers for strings.
 
 Challenges:
 - 14.1 RLE line numbers

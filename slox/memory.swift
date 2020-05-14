@@ -42,36 +42,47 @@ extension VM {
         return ptr
     }
 
-    func allocateString(chars: UnsafeMutablePointer<CChar>, length: Int) -> UnsafeMutablePointer<ObjString> {
+    func allocateString(chars: UnsafeMutablePointer<CChar>, length: Int, hash: UInt32) -> UnsafeMutablePointer<ObjString> {
         let ptr: UnsafeMutablePointer<ObjString> = allocateObj(objType: .String)
         ptr.withMemoryRebound(to: Obj.self, capacity: 1) { (objPtr) -> () in
             objPtr.pointee.type = .String
         }
         ptr.pointee.length = length
         ptr.pointee.chars = chars
+        ptr.pointee.hash = hash
+        
+        _ = tableSet(table: &strings, key: ptr, value: .valNil(()))
         
         return ptr
     }
 
     // Create a string out of characters that we can "own"
     func takeString(chars: UnsafeMutablePointer<CChar>, length: Int) -> UnsafeMutablePointer<ObjString> {
-        return allocateString(chars: chars, length: length)
+        let hash = hashString(chars: chars, length: length)
+        if let interned = tableFindString(table: &strings, chars: chars, length: length, hash: hash) {
+            _ = reallocate(pointer: chars, oldCapacity: length + 1, newCapacity: 0)
+            return interned
+        }
+        return allocateString(chars: chars, length: length, hash: hash)
     }
     
     // Create a string out of characters that we must copy
     func copyString(text: Substring) -> UnsafeMutablePointer<ObjString> {
-        let count = text.utf8.count - 2 // to remove " marks
+        let length = text.utf8.count - 2 // to remove " marks
         let chars = text.withCString { (textPtr) -> UnsafeMutablePointer<CChar> in
-            guard let outPtr: UnsafeMutablePointer<CChar> = reallocate(pointer: nil, oldCapacity: 0, newCapacity: count + 1)
+            guard let outPtr: UnsafeMutablePointer<CChar> = reallocate(pointer: nil, oldCapacity: 0, newCapacity: length + 1)
                 else {
                     preconditionFailure("Failed to allocate CChars")
             }
-            outPtr.initialize(from: textPtr + 1, count: count) // + 1 to skip "
-            outPtr[count] = CChar(0)
+            outPtr.initialize(from: textPtr + 1, count: length) // + 1 to skip "
+            outPtr[length] = CChar(0)
             return outPtr
         }
-        
-        return allocateString(chars: chars, length: count)
+        let hash = hashString(chars: chars, length: length)
+        if let interned = tableFindString(table: &strings, chars: chars, length: length, hash: hash) {
+            return interned
+        }
+        return allocateString(chars: chars, length: length, hash: hash)
     }
     
     func concatenate(a: Value, b: Value) {
@@ -113,5 +124,11 @@ extension VM {
             }
         }
         _ = reallocate(pointer: object, oldCapacity: 1, newCapacity: 0)
+    }
+    
+    func freeTable(_ table: inout Table) {
+        table.entries = reallocate(pointer: table.entries, oldCapacity: table.capacity, newCapacity: 0)
+        table.count = 0
+        table.capacity = 0
     }
 }

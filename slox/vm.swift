@@ -17,6 +17,7 @@ class VM {
     var ip = 0
     var debugTraceExecution = true
     var stack: [Value] = []
+    var strings = Table()
     var objects: UnsafeMutablePointer<Obj>? = nil
     
     init() {
@@ -26,6 +27,7 @@ class VM {
         chunk = Chunk()
         stack = []
         freeObjects()
+        freeTable(&strings)
     }
     
     func interpret(chunk: Chunk) -> InterpretResult {

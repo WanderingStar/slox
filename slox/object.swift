@@ -21,4 +21,5 @@ struct ObjString {
     var obj: Obj
     var length: Int
     var chars: UnsafeMutablePointer<CChar>
+    var hash: UInt32
 }

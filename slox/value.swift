@@ -138,11 +138,15 @@ func ==(a: Value, b: Value) -> Bool {
         return true
     case (.valNumber(let vA), .valNumber(let vB)):
         return vA == vB
-    case (.valObj, .valObj):
-        return a.asString == b.asString
+    case (.valObj(let oA), .valObj(let oB)):
+        return oA == oB
     default:
         return false
     }
+}
+
+func growCapacity(_ capacity: Int) -> Int {
+    return capacity < 8 ? 8 : 2 * capacity
 }
 
 struct ValueArray {
@@ -152,7 +156,7 @@ struct ValueArray {
     
     mutating func write(value: Value) {
         if capacity < count + 1 {
-            capacity = capacity < 8 ? 8 : 2 * capacity
+            capacity = growCapacity(capacity)
             values.reserveCapacity(capacity)
         }
         values.append(value)
