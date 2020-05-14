@@ -55,7 +55,7 @@ class VM {
     }
     
     func peek(_ distance: Int) -> Value {
-        return stack[-1 - distance]
+        return stack[stack.count - 1 - distance]
     }
     
     func readByte() -> UInt8 {
@@ -114,7 +114,8 @@ class VM {
                 }
             case .Add:
                 if peek(0).isObjType(.String) && peek(1).isObjType(.String) {
-                    concatenate(a: peek(0), b: peek(0))
+                    let b = pop(), a = pop()
+                    concatenate(a: a, b: b)
                 } else if let error = binaryOp(+) {
                     return error
                 }
