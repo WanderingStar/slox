@@ -89,6 +89,7 @@ class VM {
                     print("[ \(slot) ]", terminator: "")
                 }
                 print()
+                print(tableEntries(table: strings))
                 _ = disassembleInstruction(chunk, offset: ip)
             }
             let instruction = readByte()

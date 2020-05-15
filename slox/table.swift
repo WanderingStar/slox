@@ -148,4 +148,15 @@ extension VM {
         table.capacity = capacity
     }
     
+    func tableEntries(table: Table) -> [(String, Value)] {
+        let entries = UnsafeBufferPointer<Entry>(start: table.entries, count: table.capacity)
+        var nonempty: [(String, Value)] = []
+        for entry in entries {
+            if let key = entry.key {
+                nonempty.append((String(objString: key.pointee), entry.value))
+            }
+        }
+        return nonempty
+    }
+    
 }
