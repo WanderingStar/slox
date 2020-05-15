@@ -13,6 +13,7 @@ enum OpCode: UInt8 {
     Equal, Greater, Less,
     Add, Subtract, Multiply, Divide,
     Not, Negate,
+    Print,
     Return 
 }
 

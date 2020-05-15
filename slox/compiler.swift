@@ -41,6 +41,18 @@ struct Parser {
         errorAtCurrent(message: message)
     }
     
+    mutating func check(type: TokenType) -> Bool {
+        return current?.type == type
+    }
+    
+    mutating func match(type: TokenType) -> Bool {
+        if (!check(type: type)) {
+            return false
+        }
+        advance()
+        return true;
+    }
+    
     mutating func errorAtCurrent(message: String) {
         errorAt(token: current, message: message)
     }
@@ -121,8 +133,12 @@ class Compiler {
     
     func compile() -> Chunk? {
         _ = parser.advance()
-        expression()
-        parser.consume(type: .tokenEOF, message: "Expect end of expression")
+        // expression()
+        // parser.consume(type: .tokenEOF, message: "Expect end of expression")
+        while !parser.match(type: .tokenEOF) {
+            declaration()
+        }
+        
         endCompiler()
         return parser.hadError ? nil : currentChunk
     }
@@ -298,6 +314,22 @@ class Compiler {
     
     func expression() {
         parsePrecedence(.Assignment)
+    }
+    
+    func declaration() {
+        statement()
+    }
+    
+    func statement() {
+        if parser.match(type: .tokenPrint) {
+            printStatement()
+        }
+    }
+    
+    func printStatement() {
+        expression()
+        parser.consume(type: .tokenSemicolon, message: "Explect ';' after value.")
+        emit(opCode: .Print)
     }
     
     static let rules: [ParseRule] = [

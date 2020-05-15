@@ -65,6 +65,8 @@ func disassembleInstruction(_ chunk: Chunk, offset: Int) -> Int {
         return simpleInstruction("OP_NOT", offset: offset)
     case .Negate:
         return simpleInstruction("OP_NEGATE", offset: offset)
+    case .Print:
+        return simpleInstruction("OP_PRINT", offset: offset)
     case .Return:
         return simpleInstruction("OP_RETURN", offset: offset)
     case .none:

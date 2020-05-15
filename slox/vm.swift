@@ -144,9 +144,9 @@ class VM {
                     runtimeError(format: "Operand must be a number.");
                     return .RuntimeError
                 }
-            case .Return:
+            case .Print:
                 print(pop())
-                return .Ok
+                break;
             default:
                 return .RuntimeError
             }
