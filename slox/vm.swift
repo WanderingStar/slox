@@ -103,7 +103,8 @@ class VM {
                 push(.valBool(true))
             case .False:
                 push(.valBool(false))
-                
+            case .Pop:
+                _ = pop()
             case .Equal:
                 let b = pop(), a = pop()
                 push(.valBool(a == b))

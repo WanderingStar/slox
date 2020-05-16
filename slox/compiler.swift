@@ -318,11 +318,15 @@ class Compiler {
     
     func declaration() {
         statement()
+        
+        if parser.panicMode { synchronize() }
     }
     
     func statement() {
         if parser.match(type: .tokenPrint) {
             printStatement()
+        } else {
+            expressionStatement()
         }
     }
     
@@ -331,6 +335,33 @@ class Compiler {
         parser.consume(type: .tokenSemicolon, message: "Explect ';' after value.")
         emit(opCode: .Print)
     }
+    
+    func expressionStatement() {
+        expression()
+        parser.consume(type: .tokenSemicolon, message: "Explect ';' after expression.")
+        emit(opCode: .Pop)
+    }
+    
+    func synchronize() {
+        parser.panicMode = false
+        
+        while parser.current?.type != .tokenEOF {
+            if parser.previous?.type == .tokenSemicolon {
+                return
+            }
+            
+            switch parser.current?.type {
+            case .tokenClass, .tokenFun, .tokenVar, .tokenFor,
+                 .tokenIf, .tokenWhile, .tokenPrint, .tokenReturn:
+                return
+            default:
+                break
+            }
+            
+            parser.advance()
+        }
+    }
+    
     
     static let rules: [ParseRule] = [
         ParseRule( grouping, nil,    .None ),       // TOKEN_LEFT_PAREN

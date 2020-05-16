@@ -47,6 +47,8 @@ func disassembleInstruction(_ chunk: Chunk, offset: Int) -> Int {
         return simpleInstruction("OP_TRUE", offset: offset)
     case .False:
         return simpleInstruction("OP_FALSE", offset: offset)
+    case .Pop:
+        return simpleInstruction("OP_POP", offset: offset)
     case .Equal:
         return simpleInstruction("OP_EQUAL", offset: offset)
     case .Greater:
