@@ -68,13 +68,13 @@ extension VM {
     
     // Create a string out of characters that we must copy
     func copyString(text: Substring) -> UnsafeMutablePointer<ObjString> {
-        let length = text.utf8.count - 2 // to remove " marks
+        let length = text.utf8.count
         let chars = text.withCString { (textPtr) -> UnsafeMutablePointer<CChar> in
             guard let outPtr: UnsafeMutablePointer<CChar> = reallocate(pointer: nil, oldCapacity: 0, newCapacity: length + 1)
                 else {
                     preconditionFailure("Failed to allocate CChars")
             }
-            outPtr.initialize(from: textPtr + 1, count: length) // + 1 to skip "
+            outPtr.initialize(from: textPtr, count: length)
             outPtr[length] = CChar(0)
             return outPtr
         }

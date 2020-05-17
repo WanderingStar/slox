@@ -58,6 +58,13 @@ enum Value : CustomStringConvertible {
         guard let objString = asObjString else { return nil }
         return String(bytesNoCopy: objString.chars, length: objString.length, encoding: .ascii, freeWhenDone: false) ?? "<bad ObjString>"
     }
+    
+    static func from(objStringPtr: UnsafeMutablePointer<ObjString>) -> Value {
+        return objStringPtr.withMemoryRebound(to: Obj.self, capacity: 1) {
+            (ptr) -> Value in
+            return .valObj(ptr)
+        }
+    }
 }
 
 func +(a: Value, b: Value) -> Value {

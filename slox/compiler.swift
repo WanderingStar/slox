@@ -259,7 +259,9 @@ class Compiler {
         guard let text = parser.previous?.text else {
             assert(false, "Tried to make a string out of a bad token")
         }
-        emit(constant: .valObj(vm.copyString(text: text).withMemoryRebound(to: Obj.self, capacity: 1, { (ptr) -> UnsafeMutablePointer<Obj> in
+        // token text includes the " on both sides
+        let unquoted = text.dropFirst().dropLast()
+        emit(constant: .valObj(vm.copyString(text: unquoted).withMemoryRebound(to: Obj.self, capacity: 1, { (ptr) -> UnsafeMutablePointer<Obj> in
             return ptr
         })))
     }
@@ -312,12 +314,45 @@ class Compiler {
         }
     }
     
+    func identifierConstant(name: Token) -> UInt8 {
+        return makeConstant(value: Value.from(objStringPtr: vm.copyString(text: name.text)))
+    }
+    
+    func parseVariable(errorMessage: String) -> UInt8 {
+        parser.consume(type: .tokenIdentifier, message: errorMessage)
+        guard let name = parser.previous else {
+            preconditionFailure("Consumed an identifier, but it's gone")
+        }
+        return identifierConstant(name: name)
+    }
+    
+    func defineVariable(global: UInt8) {
+        emit(opCode: .DefineGlobal, byte: global)
+    }
+    
+    func varDeclaration() {
+        let global = parseVariable(errorMessage: "Expect variable name.")
+        
+        if parser.match(type: .tokenEqual) {
+            expression()
+        } else {
+            emit(opCode: .Nil)
+        }
+        parser.consume(type: .tokenSemicolon, message: "Expect ';' after variable declaration.")
+        
+        defineVariable(global: global)
+    }
+    
     func expression() {
         parsePrecedence(.Assignment)
     }
     
     func declaration() {
-        statement()
+        if parser.match(type: .tokenVar) {
+            varDeclaration();
+        } else {
+            statement()
+        }
         
         if parser.panicMode { synchronize() }
     }

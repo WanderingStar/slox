@@ -17,6 +17,7 @@ class VM {
     var ip = 0
     var debugTraceExecution = true
     var stack: [Value] = []
+    var globals = Table()
     var strings = Table()
     var objects: UnsafeMutablePointer<Obj>? = nil
     
@@ -27,6 +28,7 @@ class VM {
         chunk = Chunk()
         stack = []
         freeObjects()
+        freeTable(&globals)
         freeTable(&strings)
     }
     
@@ -69,6 +71,15 @@ class VM {
         return chunk.constants.values[Int(readByte())]
     }
     
+    func readString() -> UnsafeMutablePointer<ObjString> {
+        guard case .valObj(let ptr) = readConstant() else {
+            preconditionFailure("Tried to read string and failed")
+        }
+        return ptr.withMemoryRebound(to: ObjString.self, capacity: 1) { (objStringPtr) -> UnsafeMutablePointer<ObjString> in
+            return objStringPtr
+        }
+    }
+    
     func binaryOp(_ op: (Value, Value) -> Value) -> InterpretResult? {
         let b = pop(), a = pop()
         switch (a, b) {
@@ -104,6 +115,10 @@ class VM {
             case .False:
                 push(.valBool(false))
             case .Pop:
+                _ = pop()
+            case .DefineGlobal:
+                let name = readString()
+                _ = tableSet(table: &globals, key: name, value: peek(0))
                 _ = pop()
             case .Equal:
                 let b = pop(), a = pop()
