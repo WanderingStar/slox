@@ -119,16 +119,31 @@ struct ParseRule {
     }
 }
 
+let UINT8_COUNT = UINT8_MAX + 1
+
+struct Local {
+    let name: Token
+    let depth: Int
+}
+
+struct CompilerState {
+    var locals: [Local]
+    var localCount = 0
+    var scopeDepth = 0
+}
+
 class Compiler {
     var parser: Parser
     var compilingChunk: Chunk
     var debugPrintCode = true
     var vm: VM
+    var current: CompilerState
     
-    init(source: String, chunk: Chunk, vm: VM) {
+    init(source: String, chunk: Chunk, vm: VM, state: CompilerState) {
         parser = Parser(source: source)
         compilingChunk = chunk
         self.vm = vm
+        self.current = state
     }
     
     func compile() -> Chunk? {
@@ -187,6 +202,20 @@ class Compiler {
             disassembleChunk(currentChunk, name: "code")
         }
         emitReturn()
+    }
+    
+    func beginScope() {
+        current.scopeDepth += 1
+    }
+    
+    func endScope() {
+        current.scopeDepth -= 1
+        
+        while current.localCount > 0 &&
+            current.locals[current.localCount - 1].depth > current.scopeDepth {
+                emit(opCode: .Pop)
+                current.localCount -= 1
+        }
     }
     
     func binary(_ canAssign: Bool) {
@@ -341,15 +370,63 @@ class Compiler {
         return makeConstant(value: Value.from(objStringPtr: vm.copyString(text: name.text)))
     }
     
+    func identifiersEqual(_ a: Token, _ b: Token) -> Bool {
+        return a.text == b.text
+    }
+    
+    func addLocal(name: Token) {
+        guard current.localCount < UINT8_COUNT else {
+            parser.error(message: "Too many local variables in function.")
+            return
+        }
+        
+        let local = Local(name: name, depth: current.scopeDepth)
+        if current.localCount == current.locals.count {
+            current.locals.append(local)
+        } else {
+            // reuse existing slot
+            current.locals[current.localCount] = local
+        }
+        current.localCount += 1
+    }
+    
+    func declareVariable() {
+        // Global variables are implicitly declared
+        if (current.scopeDepth == 0) { return }
+        
+        guard let name = parser.previous else {
+            preconditionFailure("Missing variable name.")
+        }
+        var i = current.localCount - 1
+        while i >= 0 {
+            let local = current.locals[i]
+            if local.depth != -1 && local.depth < current.scopeDepth {
+                break
+            }
+            
+            if (identifiersEqual(name, local.name)) {
+                error("Variable with this name already declared in this scope.")
+            }
+            i -= 1
+        }
+        addLocal(name: name)
+    }
+    
     func parseVariable(errorMessage: String) -> UInt8 {
         parser.consume(type: .tokenIdentifier, message: errorMessage)
+        
+        declareVariable()
+        if (current.scopeDepth > 0) { return 0 }
+        
         guard let name = parser.previous else {
-            preconditionFailure("Consumed an identifier, but it's gone")
+            preconditionFailure("Consumed an identifier, but it's gone.")
         }
         return identifierConstant(name: name)
     }
     
     func defineVariable(global: UInt8) {
+        if (current.scopeDepth > 0) { return }
+        
         emit(opCode: .DefineGlobal, byte: global)
     }
     
@@ -380,9 +457,21 @@ class Compiler {
         if parser.panicMode { synchronize() }
     }
     
+    func block() {
+        while !parser.check(type: .tokenRightBrace) && !parser.check(type: .tokenEOF) {
+            declaration()
+        }
+        
+        parser.consume(type: .tokenRightBrace, message: "Expect '}' after block.")
+    }
+    
     func statement() {
         if parser.match(type: .tokenPrint) {
             printStatement()
+        } else if (parser.match(type: .tokenLeftBrace)) {
+            beginScope()
+            block()
+            endScope()
         } else {
             expressionStatement()
         }

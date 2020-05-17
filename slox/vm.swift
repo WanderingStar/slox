@@ -20,8 +20,12 @@ class VM {
     var globals = Table()
     var strings = Table()
     var objects: UnsafeMutablePointer<Obj>? = nil
+    var current: CompilerState
     
     init() {
+        var locals: [Local] = []
+        locals.reserveCapacity(Int(UINT8_COUNT))
+        current = CompilerState(locals: locals)
     }
     
     func free() {
@@ -39,7 +43,7 @@ class VM {
     }
     
     func interpret(source: String) -> InterpretResult {
-        let compiler = Compiler(source: source, chunk: chunk, vm: self)
+        let compiler = Compiler(source: source, chunk: chunk, vm: self, state: current)
         guard let compiled = compiler.compile() else {
             return .CompileError
         }
