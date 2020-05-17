@@ -7,6 +7,8 @@ Why? To get myself back in the habit of writing Swift.
 
 But I didn't really feel like using Unsafe pointers, so I'm going to cheat and use Swift arrays (which are dynamic) and pretend that they're not dynamic. **Update:** Joke's on me. I had to use unsafe pointers for strings.
 
+Also complicating things: I arbitrarily decided to _not_ make the parser, vm, compiler etc. global variables. So I have to store the vm in the compiler and pass it around a bit, and all of the memory allocation code is in the vm, but extensions let me put it in its own file.
+
 Challenges:
 - 14.1 RLE line numbers
 - 15.3 but lazy. Replaced stack with a Swift stack
