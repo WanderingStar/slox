@@ -62,6 +62,10 @@ class VM {
         return stack.popLast()!
     }
     
+    func popN(_ n: UInt8) {
+        return stack.removeLast(Int(n))
+    }
+    
     func peek(_ distance: Int) -> Value {
         return stack[stack.count - 1 - distance]
     }
@@ -120,6 +124,9 @@ class VM {
                 push(.valBool(false))
             case .Pop:
                 _ = pop()
+            case .PopN:
+                let n = readByte()
+                popN(n)
             case .GetGlobal:
                 let name = readString()
                 guard let value = tableGet(table: globals, key: name) else {

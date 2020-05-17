@@ -13,4 +13,5 @@ Challenges:
 - 14.1 RLE line numbers
 - 15.3 but lazy. Replaced stack with a Swift stack
 - 21.1 lookup constants in the value array
+- 22 added PopN
 

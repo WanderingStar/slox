@@ -211,11 +211,12 @@ class Compiler {
     func endScope() {
         current.scopeDepth -= 1
         
+        let start = current.localCount
         while current.localCount > 0 &&
             current.locals[current.localCount - 1].depth > current.scopeDepth {
-                emit(opCode: .Pop)
                 current.localCount -= 1
         }
+        emit(opCode: .PopN, byte: UInt8(start - current.localCount))
     }
     
     func binary(_ canAssign: Bool) {
@@ -405,7 +406,7 @@ class Compiler {
             }
             
             if (identifiersEqual(name, local.name)) {
-                error("Variable with this name already declared in this scope.")
+                parser.error(message: "Variable with this name already declared in this scope.")
             }
             i -= 1
         }
