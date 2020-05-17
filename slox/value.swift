@@ -8,7 +8,8 @@
 
 import Foundation
 
-enum Value : CustomStringConvertible {
+enum Value : CustomStringConvertible, Comparable, Equatable {
+    
     case valBool(Bool), valNil(Void), valNumber(Double), valObj(UnsafeMutablePointer<Obj>)
     
     var description: String {
@@ -63,6 +64,15 @@ enum Value : CustomStringConvertible {
         return objStringPtr.withMemoryRebound(to: Obj.self, capacity: 1) {
             (ptr) -> Value in
             return .valObj(ptr)
+        }
+    }
+    
+    static func < (lhs: Value, rhs: Value) -> Bool {
+        switch (lhs, rhs) {
+        case (.valNumber(let a), .valNumber(let b)):
+            return a < b
+        default:
+            return false
         }
     }
 }
@@ -146,7 +156,8 @@ func ==(a: Value, b: Value) -> Bool {
     case (.valNumber(let vA), .valNumber(let vB)):
         return vA == vB
     case (.valObj(let oA), .valObj(let oB)):
-        return oA == oB
+        let equal = oA == oB
+        return equal
     default:
         return false
     }
@@ -160,6 +171,11 @@ struct ValueArray {
     var count = 0
     var capacity = 0
     var values: [Value] = []
+    
+    func scan(value: Value) -> Int? {
+        let index = values.firstIndex(of: value)
+        return index
+    }
     
     mutating func write(value: Value) {
         if capacity < count + 1 {

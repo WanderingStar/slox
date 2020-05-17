@@ -49,6 +49,9 @@ struct Chunk {
     }
     
     mutating func addConstant(value: Value) -> Int {
+        if let index = constants.scan(value: value) {
+            return index
+        }
         constants.write(value: value)
         return constants.count - 1
     }
