@@ -266,6 +266,18 @@ class Compiler {
         })))
     }
     
+    func namedVariable(name: Token) {
+        let arg = identifierConstant(name: name)
+        emit(opCode: .GetGlobal, byte: arg)
+    }
+    
+    func variable() {
+        guard let previous = parser.previous else {
+            preconditionFailure("Variable with no previous.")
+        }
+        namedVariable(name: previous)
+    }
+    
     func unary() {
         guard let operatorType = parser.previous?.type
             else {
@@ -418,7 +430,7 @@ class Compiler {
         ParseRule( nil,      binary, .Comparison ), // TOKEN_GREATER_EQUAL
         ParseRule( nil,      binary, .Comparison ), // TOKEN_LESS
         ParseRule( nil,      binary, .Comparison ), // TOKEN_LESS_EQUAL
-        ParseRule( nil,      nil,    .None ),       // TOKEN_IDENTIFIER
+        ParseRule( variable, nil,    .None ),       // TOKEN_IDENTIFIER
         ParseRule( string,   nil,    .None ),       // TOKEN_STRING
         ParseRule( number,   nil,    .None ),       // TOKEN_NUMBER
         ParseRule( nil,      nil,    .None ),       // TOKEN_AND

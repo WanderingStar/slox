@@ -11,7 +11,7 @@ import Foundation
 enum OpCode: UInt8 {
     case Constant, Nil, True, False,
     Pop,
-    DefineGlobal,
+    GetGlobal, DefineGlobal,
     Equal, Greater, Less,
     Add, Subtract, Multiply, Divide,
     Not, Negate,

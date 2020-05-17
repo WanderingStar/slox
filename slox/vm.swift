@@ -116,6 +116,13 @@ class VM {
                 push(.valBool(false))
             case .Pop:
                 _ = pop()
+            case .GetGlobal:
+                let name = readString()
+                guard let value = tableGet(table: globals, key: name) else {
+                    runtimeError(format: "Undefined variable '%s'.", name.pointee.chars)
+                    return .RuntimeError
+                }
+                push(value)
             case .DefineGlobal:
                 let name = readString()
                 _ = tableSet(table: &globals, key: name, value: peek(0))
