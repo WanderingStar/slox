@@ -127,6 +127,13 @@ class VM {
                 let name = readString()
                 _ = tableSet(table: &globals, key: name, value: peek(0))
                 _ = pop()
+            case .SetGlobal:
+                let name = readString()
+                if tableSet(table: &globals, key: name, value: peek(0)) {
+                    _ = tableDelete(table: &globals, key: name)
+                    runtimeError(format: "Undefined variable '%s'.", name.pointee.chars)
+                    return .RuntimeError
+                }
             case .Equal:
                 let b = pop(), a = pop()
                 push(.valBool(a == b))

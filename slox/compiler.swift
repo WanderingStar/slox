@@ -105,7 +105,7 @@ extension Precedence: Comparable {
     }
 }
 
-typealias ParseFn = (Compiler) -> () -> ()
+typealias ParseFn = (Compiler) -> (Bool) -> ()
 
 struct ParseRule {
     let prefix: ParseFn?
@@ -189,7 +189,7 @@ class Compiler {
         emitReturn()
     }
     
-    func binary() {
+    func binary(_ canAssign: Bool) {
         // Remember the operator.
         guard let operatorType = parser.previous?.type
             else {
@@ -228,7 +228,7 @@ class Compiler {
         }
     }
     
-    func literal() {
+    func literal(_ canAssign: Bool) {
         switch parser.previous?.type {
         case .tokenFalse: emit(opCode: .False)
         case .tokenNil: emit(opCode: .Nil)
@@ -238,13 +238,13 @@ class Compiler {
         }
     }
     
-    func grouping() {
+    func grouping(_ canAssign: Bool) {
         expression()
         parser.consume(type: .tokenRightParen,
                        message: "Expect ')' after expression.")
     }
     
-    func number() {
+    func number(_ canAssign: Bool) {
         guard let string = parser.previous?.string,
             let number = Double(string)
             else {
@@ -255,7 +255,7 @@ class Compiler {
         emit(constant: value)
     }
     
-    func string() {
+    func string(_ canAssign: Bool) {
         guard let text = parser.previous?.text else {
             assert(false, "Tried to make a string out of a bad token")
         }
@@ -266,19 +266,25 @@ class Compiler {
         })))
     }
     
-    func namedVariable(name: Token) {
+    func namedVariable(name: Token, canAssign: Bool) {
         let arg = identifierConstant(name: name)
-        emit(opCode: .GetGlobal, byte: arg)
+        
+        if canAssign && parser.match(type: .tokenEqual) {
+            expression()
+            emit(opCode: .SetGlobal, byte: arg)
+        } else {
+            emit(opCode: .GetGlobal, byte: arg)
+        }
     }
     
-    func variable() {
+    func variable(_ canAssign: Bool) {
         guard let previous = parser.previous else {
             preconditionFailure("Variable with no previous.")
         }
-        namedVariable(name: previous)
+        namedVariable(name: previous, canAssign: canAssign)
     }
     
-    func unary() {
+    func unary(_ canAssign: Bool) {
         guard let operatorType = parser.previous?.type
             else {
                 parser.error(message: "Unary with no previous.")
@@ -311,7 +317,8 @@ class Compiler {
                 return
         }
         
-        prefixRule(self)()
+        let canAssign = precedence <= .Assignment
+        prefixRule(self)(canAssign)
         
         while let operatorType = parser.current?.type,
         precedence <= Compiler.getRule(type: operatorType).precedence {
@@ -322,7 +329,11 @@ class Compiler {
                     return
             }
             
-            infixRule(self)()
+            infixRule(self)(canAssign)
+        }
+        
+        if (canAssign && parser.match(type: .tokenEqual)) {
+            parser.error(message: "Invalid assignment target.")
         }
     }
     
@@ -379,13 +390,13 @@ class Compiler {
     
     func printStatement() {
         expression()
-        parser.consume(type: .tokenSemicolon, message: "Explect ';' after value.")
+        parser.consume(type: .tokenSemicolon, message: "Expect ';' after value.")
         emit(opCode: .Print)
     }
     
     func expressionStatement() {
         expression()
-        parser.consume(type: .tokenSemicolon, message: "Explect ';' after expression.")
+        parser.consume(type: .tokenSemicolon, message: "Expect ';' after expression.")
         emit(opCode: .Pop)
     }
     
