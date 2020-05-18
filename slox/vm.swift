@@ -127,6 +127,12 @@ class VM {
             case .PopN:
                 let n = readByte()
                 popN(n)
+            case .GetLocal:
+                let slot = readByte()
+                push(stack[Int(slot)])
+            case .SetLocal:
+                let slot = readByte()
+                stack[Int(slot)] = peek(0)
             case .GetGlobal:
                 let name = readString()
                 guard let value = tableGet(table: globals, key: name) else {

@@ -28,6 +28,12 @@ func constantInstruction(_ name: String, chunk: Chunk, offset: Int) -> Int {
     return offset + 2
 }
 
+func byteInstruction(_ name: String, chunk: Chunk, offset: Int) -> Int {
+    let slot = chunk.code[offset + 1]
+    print(String(format: "%-16@ %4d", name, slot));
+    return offset + 2
+}
+
 func disassembleInstruction(_ chunk: Chunk, offset: Int) -> Int {
     print(String.init(format: "%04d ", offset), terminator: "")
     
@@ -50,7 +56,11 @@ func disassembleInstruction(_ chunk: Chunk, offset: Int) -> Int {
     case .Pop:
         return simpleInstruction("OP_POP", offset: offset)
     case .PopN:
-        return constantInstruction("OP_POPN", chunk: chunk, offset: offset)
+        return byteInstruction("OP_POPN", chunk: chunk, offset: offset)
+    case .GetLocal:
+        return byteInstruction("OP_GET_LOCAL", chunk: chunk, offset: offset)
+    case .SetLocal:
+        return byteInstruction("OP_SET_LOCAL", chunk: chunk, offset: offset)
     case .GetGlobal:
         return constantInstruction("OP_GET_GLOBAL", chunk: chunk, offset: offset)
     case .DefineGlobal:

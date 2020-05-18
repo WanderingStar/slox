@@ -296,14 +296,33 @@ class Compiler {
         })))
     }
     
+    func resolveLocal(state: CompilerState, name: Token) -> Int {
+        var i = state.localCount - 1
+        while (i >= 0) {
+            let local = state.locals[i]
+            if identifiersEqual(name, local.name) {
+                return i
+            }
+            i -= 1
+        }
+        return -1
+    }
+    
     func namedVariable(name: Token, canAssign: Bool) {
-        let arg = identifierConstant(name: name)
-        
+        var getOp = OpCode.GetLocal
+        var setOp = OpCode.SetLocal
+        var arg = resolveLocal(state: current, name: name)
+        if (arg == -1) {
+            arg = Int(identifierConstant(name: name))
+            getOp = .GetGlobal
+            setOp = .SetGlobal
+        }
+                
         if canAssign && parser.match(type: .tokenEqual) {
             expression()
-            emit(opCode: .SetGlobal, byte: arg)
+            emit(opCode: setOp, byte: UInt8(arg))
         } else {
-            emit(opCode: .GetGlobal, byte: arg)
+            emit(opCode: getOp, byte: UInt8(arg))
         }
     }
     
