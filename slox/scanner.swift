@@ -25,7 +25,7 @@ enum TokenType: Int {
     tokenIdentifier, tokenString, tokenNumber,
     
     // Keywords.
-    tokenAnd, tokenClass, tokenElse, tokenFalse,
+    tokenAnd, tokenClass, tokenCon, tokenElse, tokenFalse,
     tokenFor, tokenFun, tokenIf, tokenNil, tokenOr,
     tokenPrint, tokenReturn, tokenSuper, tokenThis,
     tokenTrue, tokenVar, tokenWhile,
@@ -181,7 +181,15 @@ struct Scanner {
         // instead of just the part we haven't previously looked at
         switch source[startIndex] {
         case "a": return checkKeyword(match: "and", type: .tokenAnd)
-        case "c": return checkKeyword(match: "class", type: .tokenClass)
+        case "c":
+            if current - start > 1 {
+                switch source[index(start + 1)] {
+                case "o": return checkKeyword(match: "con", type: .tokenCon)
+                case "l": return checkKeyword(match: "class", type: .tokenClass)
+                default:
+                    break
+                }
+            }
         case "e": return checkKeyword(match: "else", type: .tokenElse)
         case "f":
             if current - start > 1 {

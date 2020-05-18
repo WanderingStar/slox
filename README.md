@@ -14,4 +14,13 @@ Challenges:
 - 15.3 but lazy. Replaced stack with a Swift stack
 - 21.1 lookup constants in the value array
 - 22 added PopN
+- 22.2 support for
+    ```
+    { var a = 1; { var a = a + 1; print a; } print a; }
+    ```
+    - which is just commenting out the error line...
+- 22.3 added `con` declaration for constants
+    - error if not initialized
+    - error if assigned after initialization
+    - global `con`s can be redefined, analogously to global `var`s
 

@@ -123,6 +123,7 @@ let UINT8_COUNT = UINT8_MAX + 1
 
 struct Local {
     let name: Token
+    let isConstant: Bool
     var depth: Int
 }
 
@@ -316,13 +317,23 @@ class Compiler {
         var getOp = OpCode.GetLocal
         var setOp = OpCode.SetLocal
         var arg = resolveLocal(state: current, name: name)
+        var assignedConstant = false
         if (arg == -1) {
             arg = Int(identifierConstant(name: name))
             getOp = .GetGlobal
             setOp = .SetGlobal
+        } else {
+            let local = current.locals[arg]
+            if local.isConstant && local.depth != -1 {
+                assignedConstant = true
+            }
         }
                 
         if canAssign && parser.match(type: .tokenEqual) {
+            if assignedConstant {
+                parser.error(message: "Can't reassign constant.")
+                return
+            }
             expression()
             emit(opCode: setOp, byte: UInt8(arg))
         } else {
@@ -398,13 +409,13 @@ class Compiler {
         return a.text == b.text
     }
     
-    func addLocal(name: Token) {
+    func addLocal(name: Token, isConstant: Bool) {
         guard current.localCount < UINT8_COUNT else {
             parser.error(message: "Too many local variables in function.")
             return
         }
         
-        let local = Local(name: name, depth: -1)
+        let local = Local(name: name, isConstant: isConstant, depth: -1)
         if current.localCount == current.locals.count {
             current.locals.append(local)
         } else {
@@ -414,7 +425,7 @@ class Compiler {
         current.localCount += 1
     }
     
-    func declareVariable() {
+    func declareVariable(isConstant: Bool) {
         // Global variables are implicitly declared
         if (current.scopeDepth == 0) { return }
         
@@ -433,13 +444,13 @@ class Compiler {
             }
             i -= 1
         }
-        addLocal(name: name)
+        addLocal(name: name, isConstant: isConstant)
     }
     
-    func parseVariable(errorMessage: String) -> UInt8 {
+    func parseVariable(isConstant: Bool, errorMessage: String) -> UInt8 {
         parser.consume(type: .tokenIdentifier, message: errorMessage)
         
-        declareVariable()
+        declareVariable(isConstant: isConstant)
         if (current.scopeDepth > 0) { return 0 }
         
         guard let name = parser.previous else {
@@ -461,12 +472,16 @@ class Compiler {
         emit(opCode: .DefineGlobal, byte: global)
     }
     
-    func varDeclaration() {
-        let global = parseVariable(errorMessage: "Expect variable name.")
+    func varDeclaration(isConstant: Bool) {
+        let global = parseVariable(isConstant: isConstant, errorMessage: "Expect variable name.")
         
         if parser.match(type: .tokenEqual) {
             expression()
         } else {
+            if isConstant {
+                parser.error(message: "Constant must be initialized.")
+                return
+            }
             emit(opCode: .Nil)
         }
         parser.consume(type: .tokenSemicolon, message: "Expect ';' after variable declaration.")
@@ -480,7 +495,9 @@ class Compiler {
     
     func declaration() {
         if parser.match(type: .tokenVar) {
-            varDeclaration();
+            varDeclaration(isConstant: false);
+        } else if parser.match(type: .tokenCon) {
+            varDeclaration(isConstant: true);
         } else {
             statement()
         }
@@ -529,7 +546,7 @@ class Compiler {
             }
             
             switch parser.current?.type {
-            case .tokenClass, .tokenFun, .tokenVar, .tokenFor,
+            case .tokenClass, .tokenCon, .tokenFun, .tokenVar, .tokenFor,
                  .tokenIf, .tokenWhile, .tokenPrint, .tokenReturn:
                 return
             default:
@@ -566,6 +583,7 @@ class Compiler {
         ParseRule( number,   nil,    .None ),       // TOKEN_NUMBER
         ParseRule( nil,      nil,    .None ),       // TOKEN_AND
         ParseRule( nil,      nil,    .None ),       // TOKEN_CLASS
+        ParseRule( nil,      nil,    .None ),       // TOKEN_CON
         ParseRule( nil,      nil,    .None ),       // TOKEN_ELSE
         ParseRule( literal,  nil,    .None ),       // TOKEN_FALSE
         ParseRule( nil,      nil,    .None ),       // TOKEN_FOR
