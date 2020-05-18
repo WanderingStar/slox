@@ -123,7 +123,7 @@ let UINT8_COUNT = UINT8_MAX + 1
 
 struct Local {
     let name: Token
-    let depth: Int
+    var depth: Int
 }
 
 struct CompilerState {
@@ -301,7 +301,11 @@ class Compiler {
         while (i >= 0) {
             let local = state.locals[i]
             if identifiersEqual(name, local.name) {
-                return i
+                if (local.depth == -1) {
+                    // parser.error(message: "Cannot read local variable in its own initializer.")
+                } else {
+                    return i
+                }
             }
             i -= 1
         }
@@ -400,7 +404,7 @@ class Compiler {
             return
         }
         
-        let local = Local(name: name, depth: current.scopeDepth)
+        let local = Local(name: name, depth: -1)
         if current.localCount == current.locals.count {
             current.locals.append(local)
         } else {
@@ -444,8 +448,15 @@ class Compiler {
         return identifierConstant(name: name)
     }
     
+    func markInitialized() {
+        current.locals[current.localCount - 1].depth = current.scopeDepth
+    }
+    
     func defineVariable(global: UInt8) {
-        if (current.scopeDepth > 0) { return }
+        if (current.scopeDepth > 0) {
+            markInitialized()
+            return
+        }
         
         emit(opCode: .DefineGlobal, byte: global)
     }
