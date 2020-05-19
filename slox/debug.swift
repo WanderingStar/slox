@@ -34,6 +34,12 @@ func byteInstruction(_ name: String, chunk: Chunk, offset: Int) -> Int {
     return offset + 2
 }
 
+func shortInstruction(_ name: String, chunk: Chunk, offset: Int) -> Int {
+    let short = Int(chunk.code[offset + 1] << 8) | Int(chunk.code[offset + 2])
+    print(String(format: "%-16@ %4d", name, short));
+    return offset + 3
+}
+
 func disassembleInstruction(_ chunk: Chunk, offset: Int) -> Int {
     print(String.init(format: "%04d ", offset), terminator: "")
     
@@ -87,6 +93,8 @@ func disassembleInstruction(_ chunk: Chunk, offset: Int) -> Int {
         return simpleInstruction("OP_NEGATE", offset: offset)
     case .Print:
         return simpleInstruction("OP_PRINT", offset: offset)
+    case .JumpIfFalse:
+        return shortInstruction("OP_JUMP_IF_FALSE", chunk: chunk, offset: offset)
     case .Return:
         return simpleInstruction("OP_RETURN", offset: offset)
     case .none:

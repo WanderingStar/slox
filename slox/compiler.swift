@@ -181,12 +181,30 @@ class Compiler {
         emit(byte: byte)
     }
     
+    func emitJump(opCode: OpCode) -> Int {
+        emit(opCode: opCode)
+        emit(byte: 0xff)
+        emit(byte: 0xff)
+        return currentChunk.count - 2
+    }
+    
     func emit(constant: Value) {
         emit(opCode: .Constant, byte: makeConstant(value: constant))
     }
     
     func emitReturn() {
         emit(opCode: .Return)
+    }
+    
+    func patchJump(offset: Int) {
+        // -2 to adjust for the bytecode for the jump offset itself.
+        let jump = currentChunk.count - offset - 2
+        if (jump > UINT16_MAX) {
+            parser.error(message: "Too much code to jump over.")
+        }
+        
+        currentChunk.code[offset] = UInt8((jump >> 8) & 0xff)
+        currentChunk.code[offset + 1] = UInt8(jump & 0xff)
     }
     
     func makeConstant(value: Value) -> UInt8 {
@@ -516,6 +534,8 @@ class Compiler {
     func statement() {
         if parser.match(type: .tokenPrint) {
             printStatement()
+        } else if (parser.match(type: .tokenIf)) {
+            ifStatement()
         } else if (parser.match(type: .tokenLeftBrace)) {
             beginScope()
             block()
@@ -535,6 +555,17 @@ class Compiler {
         expression()
         parser.consume(type: .tokenSemicolon, message: "Expect ';' after expression.")
         emit(opCode: .Pop)
+    }
+    
+    func ifStatement() {
+        parser.consume(type: .tokenLeftParen, message: "Expect '(' after 'if'.")
+        expression()
+        parser.consume(type: .tokenRightParen, message: "Expect ')' after condition.")
+        
+        let thenJump = emitJump(opCode: .JumpIfFalse)
+        statement()
+        
+        patchJump(offset: thenJump)
     }
     
     func synchronize() {

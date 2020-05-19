@@ -79,6 +79,11 @@ class VM {
         return chunk.constants.values[Int(readByte())]
     }
     
+    func readShort() -> UInt16 {
+        ip += 2
+        return UInt16(chunk.code[ip - 2] << 8) | UInt16(chunk.code[ip - 1])
+    }
+    
     func readString() -> UnsafeMutablePointer<ObjString> {
         guard case .valObj(let ptr) = readConstant() else {
             preconditionFailure("Tried to read string and failed")
@@ -193,7 +198,11 @@ class VM {
                 }
             case .Print:
                 print(pop())
-                break;
+            case .JumpIfFalse:
+                let offset = readShort()
+                if (peek(0).isFalsey) {
+                    ip += Int(offset)
+                }
             default:
                 return .RuntimeError
             }
