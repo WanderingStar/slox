@@ -563,9 +563,19 @@ class Compiler {
         parser.consume(type: .tokenRightParen, message: "Expect ')' after condition.")
         
         let thenJump = emitJump(opCode: .JumpIfFalse)
+        emit(opCode: .Pop)
         statement()
+
+        let elseJump = emitJump(opCode: .Jump)
         
         patchJump(offset: thenJump)
+        emit(opCode: .Pop)
+        
+        if (parser.match(type: .tokenElse)) {
+            statement()
+        }
+        patchJump(offset: elseJump)
+        
     }
     
     func synchronize() {

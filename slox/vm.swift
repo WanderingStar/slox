@@ -198,6 +198,9 @@ class VM {
                 }
             case .Print:
                 print(pop())
+            case .Jump:
+                let offset = readShort()
+                ip += Int(offset)
             case .JumpIfFalse:
                 let offset = readShort()
                 if (peek(0).isFalsey) {
