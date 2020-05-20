@@ -206,6 +206,9 @@ class VM {
                 if (peek(0).isFalsey) {
                     ip += Int(offset)
                 }
+            case .Loop:
+                let offset = readShort()
+                ip -= Int(offset)
             default:
                 return .RuntimeError
             }

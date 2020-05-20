@@ -188,6 +188,16 @@ class Compiler {
         return currentChunk.count - 2
     }
     
+    func emitLoop(loopStart: Int) {
+        emit(opCode: .Loop)
+        
+        let offset = currentChunk.count - loopStart + 2
+        if offset > UINT16_MAX { parser.error(message: "Loop body too large.")}
+        
+        emit(byte: UInt8((offset >> 8) & 0xff))
+        emit(byte: UInt8(offset & 0xff))
+    }
+    
     func emit(constant: Value) {
         emit(opCode: .Constant, byte: makeConstant(value: constant))
     }
@@ -534,6 +544,8 @@ class Compiler {
     func statement() {
         if parser.match(type: .tokenPrint) {
             printStatement()
+        } else if (parser.match(type: .tokenWhile)) {
+            whileStatement()
         } else if (parser.match(type: .tokenIf)) {
             ifStatement()
         } else if (parser.match(type: .tokenLeftBrace)) {
@@ -549,6 +561,24 @@ class Compiler {
         expression()
         parser.consume(type: .tokenSemicolon, message: "Expect ';' after value.")
         emit(opCode: .Print)
+    }
+    
+    func whileStatement() {
+        let loopStart = currentChunk.count
+        
+        parser.consume(type: .tokenLeftParen, message: "Expect '{' after 'while'.")
+        expression()
+        parser.consume(type: .tokenRightParen, message: "Expect '}' after condition.")
+        
+        let exitJump = emitJump(opCode: .JumpIfFalse)
+        
+        emit(opCode: .Pop)
+        statement()
+        
+        emitLoop(loopStart: loopStart)
+        
+        patchJump(offset: exitJump)
+        emit(opCode: .Pop)
     }
     
     func expressionStatement() {
