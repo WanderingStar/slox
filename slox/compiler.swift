@@ -546,6 +546,8 @@ class Compiler {
             printStatement()
         } else if (parser.match(type: .tokenWhile)) {
             whileStatement()
+        } else if (parser.match(type: .tokenFor)) {
+            forStatement()
         } else if (parser.match(type: .tokenIf)) {
             ifStatement()
         } else if (parser.match(type: .tokenLeftBrace)) {
@@ -579,6 +581,57 @@ class Compiler {
         
         patchJump(offset: exitJump)
         emit(opCode: .Pop)
+    }
+    
+    func forStatement() {
+        beginScope()
+        
+        parser.consume(type: .tokenLeftParen, message: "Expect '(' after 'for'.")
+        if parser.match(type: .tokenSemicolon) {
+            // no initializer
+        } else if parser.match(type: .tokenVar) {
+            varDeclaration(isConstant: false)
+        } else if parser.match(type: .tokenCon) {
+            // why would you do this?
+            varDeclaration(isConstant: true)
+        } else {
+            expressionStatement()
+        }
+        
+        var loopStart = currentChunk.count
+        
+        var exitJump: Int?
+        if !parser.match(type: .tokenSemicolon) {
+            expression()
+            parser.consume(type: .tokenSemicolon, message: "Expect ';' after loop condition.")
+            
+            // Jump out of the loop if the condition is false.
+            exitJump = emitJump(opCode: .JumpIfFalse)
+            emit(opCode: .Pop) // Condition
+        }
+        
+        if !parser.match(type: .tokenRightParen) {
+            let bodyJump = emitJump(opCode: .Jump)
+            
+            let incrementStart = currentChunk.count
+            expression()
+            emit(opCode: .Pop)
+            parser.consume(type: .tokenRightParen, message: "Expect ')' after for clauses.")
+            
+            emitLoop(loopStart: loopStart)
+            loopStart = incrementStart
+            patchJump(offset: bodyJump)
+        }
+        
+        statement()
+        
+        emitLoop(loopStart: loopStart)
+        
+        if let exitJump = exitJump {
+            patchJump(offset: exitJump)
+            emit(opCode: .Pop)
+        }
+        endScope()
     }
     
     func expressionStatement() {
