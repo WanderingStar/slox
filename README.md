@@ -23,4 +23,5 @@ Challenges:
     - error if not initialized
     - error if assigned after initialization
     - global `con`s can be redefined, analogously to global `var`s
-
+- 25.5 switch
+    - added Jump if Unequal that only pops one

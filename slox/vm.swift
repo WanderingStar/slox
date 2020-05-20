@@ -113,7 +113,7 @@ class VM {
                     print("[ \(slot) ]", terminator: "")
                 }
                 print()
-                print(tableEntries(table: strings))
+                // print(tableEntries(table: strings))
                 _ = disassembleInstruction(chunk, offset: ip)
             }
             let instruction = readByte()
@@ -204,6 +204,13 @@ class VM {
             case .JumpIfFalse:
                 let offset = readShort()
                 if (peek(0).isFalsey) {
+                    ip += Int(offset)
+                }
+            case .JumpIfUnequal:
+                // this is for switch, so it does NOT pop the first artument
+                let b = pop(), a = peek(0)
+                let offset = readShort()
+                if (a != b) {
                     ip += Int(offset)
                 }
             case .Loop:

@@ -12,7 +12,7 @@ enum TokenType: Int {
     // Single-character tokens.
     case tokenLeftParen, tokenRightParen,
     tokenLeftBrace, tokenRightBrace,
-    tokenComma, tokenDot, tokenMinus, tokenPlus,
+    tokenColon, tokenComma, tokenDot, tokenMinus, tokenPlus,
     tokenSemicolon, tokenSlash, tokenStar,
     
     // One or two character tokens.
@@ -25,9 +25,9 @@ enum TokenType: Int {
     tokenIdentifier, tokenString, tokenNumber,
     
     // Keywords.
-    tokenAnd, tokenClass, tokenCon, tokenElse, tokenFalse,
+    tokenAnd, tokenCase, tokenClass, tokenCon, tokenDefault, tokenElse, tokenFalse,
     tokenFor, tokenFun, tokenIf, tokenNil, tokenOr,
-    tokenPrint, tokenReturn, tokenSuper, tokenThis,
+    tokenPrint, tokenReturn, tokenSuper, tokenSwitch, tokenThis,
     tokenTrue, tokenVar, tokenWhile,
     
     tokenError,
@@ -184,12 +184,14 @@ struct Scanner {
         case "c":
             if current - start > 1 {
                 switch source[index(start + 1)] {
+                case "a": return checkKeyword(match: "case", type: .tokenCase)
                 case "o": return checkKeyword(match: "con", type: .tokenCon)
                 case "l": return checkKeyword(match: "class", type: .tokenClass)
                 default:
                     break
                 }
             }
+        case "d": return checkKeyword(match: "default", type: .tokenDefault)
         case "e": return checkKeyword(match: "else", type: .tokenElse)
         case "f":
             if current - start > 1 {
@@ -206,7 +208,15 @@ struct Scanner {
         case "o": return checkKeyword(match: "or", type: .tokenOr)
         case "p": return checkKeyword(match: "print", type: .tokenPrint)
         case "r": return checkKeyword(match: "return", type: .tokenReturn)
-        case "s": return checkKeyword(match: "super", type: .tokenSuper)
+        case "s":
+            if current - start > 1 {
+                switch source[index(start + 1)] {
+                case "u": return checkKeyword(match: "super", type: .tokenSuper)
+                case "w": return checkKeyword(match: "switch", type: .tokenSwitch)
+                default:
+                    break
+                }
+            }
         case "t":
             if current - start > 1 {
                 switch source[index(start + 1)] {
@@ -249,6 +259,7 @@ struct Scanner {
         case "{": return token(type:.tokenLeftBrace)
         case "}": return token(type:.tokenRightBrace)
         case ";": return token(type:.tokenSemicolon)
+        case ":": return token(type:.tokenColon)
         case ",": return token(type:.tokenComma)
         case "-": return token(type:.tokenMinus)
         case "+": return token(type:.tokenPlus)

@@ -550,6 +550,8 @@ class Compiler {
             forStatement()
         } else if (parser.match(type: .tokenIf)) {
             ifStatement()
+        } else if (parser.match(type: .tokenSwitch)) {
+            switchStatement()
         } else if (parser.match(type: .tokenLeftBrace)) {
             beginScope()
             block()
@@ -661,6 +663,43 @@ class Compiler {
         
     }
     
+    func switchStatement() {
+        parser.consume(type: .tokenLeftParen, message: "Expect '(' after 'switch'.")
+        expression() // selector left on top of the stack
+        parser.consume(type: .tokenRightParen, message: "Expect ')' after expression.")
+        parser.consume(type: .tokenLeftBrace, message: "Expect '{' after expression.")
+        
+        // all of these exit jumps will be patched to just after the default
+        var exitJumps: [Int] = []
+        while parser.match(type: .tokenCase) {
+            expression()
+            parser.consume(type: .tokenColon, message: "Expect ':' after case expression.")
+
+            // case value on top of stack
+            let caseJump = emitJump(opCode: .JumpIfUnequal)
+            // case value removed from stack, but selector left
+            while !parser.check(type: .tokenCase) &&
+                !parser.check(type: .tokenDefault) &&
+                !parser.match(type: .tokenEOF) {
+                statement()
+            }
+            exitJumps.append(emitJump(opCode: .Jump))  // break
+            patchJump(offset: caseJump)
+        }
+        if parser.match(type: .tokenDefault) {
+            parser.consume(type: .tokenColon, message: "Maybe the 'default' token should be spelled 'default:'")
+            while !parser.check(type: .tokenRightBrace) && !parser.match(type: .tokenEOF) {
+                statement()
+            }
+        }
+        for exitJump in exitJumps {
+            patchJump(offset: exitJump)
+        }
+        emit(opCode: .Pop) // remove selector from stack
+        parser.consume(type: .tokenRightBrace, message: "Expect '}' after switch.")
+        
+    }
+    
     func and_(_ canAssign: Bool) {
         let endJump = emitJump(opCode: .JumpIfFalse)
         
@@ -708,6 +747,7 @@ class Compiler {
         ParseRule( nil,      nil,    .None ),       // TOKEN_RIGHT_PAREN
         ParseRule( nil,      nil,    .None ),       // TOKEN_LEFT_BRACE
         ParseRule( nil,      nil,    .None ),       // TOKEN_RIGHT_BRACE
+        ParseRule( nil,      nil,    .None ),       // TOKEN_COLON
         ParseRule( nil,      nil,    .None ),       // TOKEN_COMMA
         ParseRule( nil,      nil,    .None ),       // TOKEN_DOT
         ParseRule( unary,    binary, .Term ),       // TOKEN_MINUS
@@ -727,8 +767,10 @@ class Compiler {
         ParseRule( string,   nil,    .None ),       // TOKEN_STRING
         ParseRule( number,   nil,    .None ),       // TOKEN_NUMBER
         ParseRule( nil,      and_,   .And ),        // TOKEN_AND
+        ParseRule( nil,      nil,    .None ),       // TOKEN_CASE
         ParseRule( nil,      nil,    .None ),       // TOKEN_CLASS
         ParseRule( nil,      nil,    .None ),       // TOKEN_CON
+        ParseRule( nil,      nil,    .None ),       // TOKEN_DEFAULT
         ParseRule( nil,      nil,    .None ),       // TOKEN_ELSE
         ParseRule( literal,  nil,    .None ),       // TOKEN_FALSE
         ParseRule( nil,      nil,    .None ),       // TOKEN_FOR
@@ -739,6 +781,7 @@ class Compiler {
         ParseRule( nil,      nil,    .None ),       // TOKEN_PRINT
         ParseRule( nil,      nil,    .None ),       // TOKEN_RETURN
         ParseRule( nil,      nil,    .None ),       // TOKEN_SUPER
+        ParseRule( nil,      nil,    .None ),       // TOKEN_SWITCH
         ParseRule( nil,      nil,    .None ),       // TOKEN_THIS
         ParseRule( literal,  nil,    .None ),       // TOKEN_TRUE
         ParseRule( nil,      nil,    .None ),       // TOKEN_VAR
