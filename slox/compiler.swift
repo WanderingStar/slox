@@ -578,6 +578,27 @@ class Compiler {
         
     }
     
+    func and_(_ canAssign: Bool) {
+        let endJump = emitJump(opCode: .JumpIfFalse)
+        
+        emit(opCode: .Pop)
+        parsePrecedence(.And)
+        
+        patchJump(offset: endJump)
+    }
+    
+    func or_(_ canAssign: Bool) {
+        let elseJump = emitJump(opCode: .JumpIfFalse)
+        let endJump = emitJump(opCode: .Jump)
+        
+        patchJump(offset: elseJump)
+        emit(opCode: .Pop)
+        
+        parsePrecedence(.Or)
+        patchJump(offset: endJump)
+
+    }
+    
     func synchronize() {
         parser.panicMode = false
         
@@ -622,7 +643,7 @@ class Compiler {
         ParseRule( variable, nil,    .None ),       // TOKEN_IDENTIFIER
         ParseRule( string,   nil,    .None ),       // TOKEN_STRING
         ParseRule( number,   nil,    .None ),       // TOKEN_NUMBER
-        ParseRule( nil,      nil,    .None ),       // TOKEN_AND
+        ParseRule( nil,      and_,   .And ),        // TOKEN_AND
         ParseRule( nil,      nil,    .None ),       // TOKEN_CLASS
         ParseRule( nil,      nil,    .None ),       // TOKEN_CON
         ParseRule( nil,      nil,    .None ),       // TOKEN_ELSE
@@ -631,7 +652,7 @@ class Compiler {
         ParseRule( nil,      nil,    .None ),       // TOKEN_FUN
         ParseRule( nil,      nil,    .None ),       // TOKEN_IF
         ParseRule( literal,  nil,    .None ),       // TOKEN_NIL
-        ParseRule( nil,      nil,    .None ),       // TOKEN_OR
+        ParseRule( nil,      or_,    .Or ),         // TOKEN_OR
         ParseRule( nil,      nil,    .None ),       // TOKEN_PRINT
         ParseRule( nil,      nil,    .None ),       // TOKEN_RETURN
         ParseRule( nil,      nil,    .None ),       // TOKEN_SUPER
