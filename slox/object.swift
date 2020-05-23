@@ -10,6 +10,7 @@ import Foundation
 
 enum ObjType: Int8 {
     case String
+    case Function
 }
 
 struct Obj {
@@ -32,3 +33,9 @@ extension String {
     }
 }
 
+struct ObjFunction {
+    var obj: Obj
+    var arity: Int
+    var chunk: Chunk
+    var name: UnsafeMutablePointer<ObjString>?
+}

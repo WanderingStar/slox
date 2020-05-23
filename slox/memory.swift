@@ -119,8 +119,15 @@ extension VM {
         switch object.pointee.type {
         case .String:
             object.withMemoryRebound(to: ObjString.self, capacity: 1) {
-                (string: UnsafeMutablePointer<ObjString>) -> () in
+                (string) -> () in
                 _ = reallocate(pointer: string.pointee.chars, oldCapacity: string.pointee.length + 1, newCapacity: 0)
+                _ = reallocate(pointer: string, oldCapacity: 1, newCapacity: 0)
+            }
+        case .Function:
+            object.withMemoryRebound(to: ObjFunction.self, capacity: 1) {
+                (function) -> () in
+                function.pointee.chunk.free()
+                _ = reallocate(pointer: function, oldCapacity: 1, newCapacity: 0)
             }
         }
         _ = reallocate(pointer: object, oldCapacity: 1, newCapacity: 0)
@@ -131,4 +138,21 @@ extension VM {
         table.count = 0
         table.capacity = 0
     }
+    
+    func newFunction() -> UnsafeMutablePointer<ObjFunction> {
+        let function: UnsafeMutablePointer<ObjFunction> = allocateObj(objType: .Function)
+        function.pointee.arity = 0;
+        function.pointee.name = nil
+        function.pointee.chunk = Chunk()
+        return function
+    }
+    
+    func printFunction(function: UnsafeMutablePointer<ObjFunction>) {
+        if let name = function.pointee.name {
+            print("<fn \(String(objString: name.pointee))>", terminator: "")
+        } else {
+            print("<script>", terminator: "")
+        }
+    }
+
 }

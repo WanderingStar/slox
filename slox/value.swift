@@ -23,6 +23,16 @@ enum Value : CustomStringConvertible, Comparable, Equatable {
         case .valObj(let obj):
             switch obj.pointee.type {
             case .String: return asString ?? "<bad Obj>"
+            case .Function:
+                if let function = asObjFunction {
+                    if let name = function.name {
+                        return "<fn \(String(objString: name.pointee))>"
+                    } else {
+                        return "<script>"
+                    }
+                } else {
+                    return "<bad Obj>"
+                }
             }
         }
     }
@@ -58,6 +68,16 @@ enum Value : CustomStringConvertible, Comparable, Equatable {
     var asString: String? {
         guard let objString = asObjString else { return nil }
         return String(bytesNoCopy: objString.chars, length: objString.length, encoding: .ascii, freeWhenDone: false) ?? "<bad ObjString>"
+    }
+    
+    var asObjFunction: ObjFunction? {
+        if case let .valObj(ptr) = self {
+            return ptr.withMemoryRebound(to: ObjFunction.self, capacity: 1) {
+                (ptr) -> ObjFunction in
+                return ptr.pointee
+            }
+        }
+        return nil
     }
     
     static func from(objStringPtr: UnsafeMutablePointer<ObjString>) -> Value {

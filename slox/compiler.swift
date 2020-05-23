@@ -127,6 +127,10 @@ struct Local {
     var depth: Int
 }
 
+enum FunctionType: Int {
+    case Function, Script
+}
+
 struct CompilerState {
     var locals: [Local]
     var localCount = 0
@@ -135,19 +139,24 @@ struct CompilerState {
 
 class Compiler {
     var parser: Parser
-    var compilingChunk: Chunk
+    var function: UnsafeMutablePointer<ObjFunction>
+    var functionType: FunctionType
     var debugPrintCode = true
     var vm: VM
     var current: CompilerState
     
-    init(source: String, chunk: Chunk, vm: VM, state: CompilerState) {
+    init(source: String, functionType: FunctionType, vm: VM, state: CompilerState) {
         parser = Parser(source: source)
-        compilingChunk = chunk
         self.vm = vm
         self.current = state
+        self.function = vm.newFunction()
+        self.functionType = functionType
+        
+        let local = Local(name: Token(type: .tokenString, text: "", line: -1), isConstant: false, depth: 0)
+        current.locals.append(local)
     }
     
-    func compile() -> Chunk? {
+    func compile() -> UnsafeMutablePointer<ObjFunction>? {
         _ = parser.advance()
         // expression()
         // parser.consume(type: .tokenEOF, message: "Expect end of expression")
@@ -155,25 +164,25 @@ class Compiler {
             declaration()
         }
         
-        endCompiler()
-        return parser.hadError ? nil : currentChunk
+        let function = endCompiler()
+        return parser.hadError ? nil : function
     }
     
     var currentChunk: Chunk {
         get {
-            return compilingChunk
+            return function.pointee.chunk
         }
-        set(newChunk) {
-            compilingChunk = newChunk
+        set (newChunk) {
+            function.pointee.chunk = newChunk
         }
     }
     
     func emit(byte: UInt8) {
-        compilingChunk.write(byte: byte, line: parser.previous?.line ?? -1)
+        currentChunk.write(byte: byte, line: parser.previous?.line ?? -1)
     }
     
     func emit(opCode: OpCode) {
-        compilingChunk.write(op: opCode, line: parser.previous?.line ?? -1)
+        currentChunk.write(op: opCode, line: parser.previous?.line ?? -1)
     }
     
     func emit(opCode: OpCode, byte: UInt8) {
@@ -226,11 +235,17 @@ class Compiler {
         return UInt8(constant)
     }
     
-    func endCompiler() {
-        if (debugPrintCode && !parser.hadError) {
-            disassembleChunk(currentChunk, name: "code")
-        }
+    func endCompiler() -> UnsafeMutablePointer<ObjFunction> {
         emitReturn()
+        if (debugPrintCode && !parser.hadError) {
+            if let name = function.pointee.name {
+            disassembleChunk(currentChunk, name:
+                String(objString: name.pointee))
+            } else {
+                disassembleChunk(currentChunk, name: "<script>")
+            }
+        }
+        return function
     }
     
     func beginScope() {

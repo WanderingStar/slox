@@ -43,7 +43,7 @@ class VM {
     }
     
     func interpret(source: String) -> InterpretResult {
-        let compiler = Compiler(source: source, chunk: chunk, vm: self, state: current)
+        let compiler = Compiler(source: source, functionType: .Script, vm: self, state: current)
         guard let compiled = compiler.compile() else {
             return .CompileError
         }
