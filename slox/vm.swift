@@ -27,7 +27,7 @@ class VM {
     var globals = Table()
     var strings = Table()
     var objects: UnsafeMutablePointer<Obj>? = nil
-    var current: CompilerState
+    var current: CompilerState?
     
     var frame: CallFrame {
         get { frames.last! }
@@ -41,9 +41,6 @@ class VM {
     init() {
         frames.reserveCapacity(framesMax)
         stack.reserveCapacity(framesMax * Int(UINT8_COUNT))
-        var locals: [Local] = []
-        locals.reserveCapacity(Int(UINT8_COUNT))
-        current = CompilerState(locals: locals)
     }
     
     func free() {
@@ -54,7 +51,8 @@ class VM {
     }
     
     func interpret(source: String) -> InterpretResult {
-        let compiler = Compiler(source: source, functionType: .Script, vm: self, state: current)
+        current = CompilerState(enclosing: nil, function: newFunction(), type: .Script)
+        let compiler = Compiler(source: source, vm: self, state: current!)
         guard let compiled = compiler.compile() else {
             return .CompileError
         }

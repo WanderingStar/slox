@@ -131,31 +131,36 @@ enum FunctionType: Int {
     case Function, Script
 }
 
-struct CompilerState {
-    var locals: [Local]
+class CompilerState {
+    var enclosing: CompilerState?
+    var function: UnsafeMutablePointer<ObjFunction>
+    var functionType: FunctionType
+    var locals: [Local] = []
     var localCount = 0
     var scopeDepth = 0
+    
+    init(enclosing: CompilerState?, function: UnsafeMutablePointer<ObjFunction>, type: FunctionType) {
+        self.enclosing = enclosing
+        self.function = function
+        self.functionType = type
+        locals.reserveCapacity(Int(UINT8_COUNT))
+    }
 }
 
 class Compiler {
-    var parser: Parser
-    var function: UnsafeMutablePointer<ObjFunction>
-    var functionType: FunctionType
     var debugPrintCode = true
+    var parser: Parser
     var vm: VM
     var current: CompilerState
     
-    init(source: String, functionType: FunctionType, vm: VM, state: CompilerState) {
+    init(source: String, vm: VM, state: CompilerState) {
         parser = Parser(source: source)
         self.vm = vm
         self.current = state
-        self.function = vm.newFunction()
-        self.functionType = functionType
-        
         let local = Local(name: Token(type: .tokenString, text: "", line: -1), isConstant: false, depth: 0)
         current.locals.append(local)
     }
-    
+
     func compile() -> UnsafeMutablePointer<ObjFunction>? {
         _ = parser.advance()
         // expression()
@@ -170,10 +175,10 @@ class Compiler {
     
     var currentChunk: Chunk {
         get {
-            return function.pointee.chunk
+            return current.function.pointee.chunk
         }
         set (newChunk) {
-            function.pointee.chunk = newChunk
+            current.function.pointee.chunk = newChunk
         }
     }
     
@@ -238,14 +243,19 @@ class Compiler {
     func endCompiler() -> UnsafeMutablePointer<ObjFunction> {
         emitReturn()
         if (debugPrintCode && !parser.hadError) {
-            if let name = function.pointee.name {
+            if let name = current.function.pointee.name {
             disassembleChunk(currentChunk, name:
                 String(objString: name.pointee))
             } else {
                 disassembleChunk(currentChunk, name: "<script>")
             }
         }
-        return function
+        defer {
+            if let enclosing = current.enclosing {
+                current = enclosing
+            }
+        }
+        return current.function
     }
     
     func beginScope() {
@@ -503,6 +513,7 @@ class Compiler {
     }
     
     func markInitialized() {
+        if current.scopeDepth == 0 { return }
         current.locals[current.localCount - 1].depth = current.scopeDepth
     }
     
@@ -537,7 +548,9 @@ class Compiler {
     }
     
     func declaration() {
-        if parser.match(type: .tokenVar) {
+        if parser.match(type: .tokenFun) {
+            funDeclaration()
+        } else if parser.match(type: .tokenVar) {
             varDeclaration(isConstant: false);
         } else if parser.match(type: .tokenCon) {
             varDeclaration(isConstant: true);
@@ -554,6 +567,46 @@ class Compiler {
         }
         
         parser.consume(type: .tokenRightBrace, message: "Expect '}' after block.")
+    }
+    
+    func function(type: FunctionType) {
+        let function = vm.newFunction()
+        if type != .Script {
+            function.pointee.name = vm.copyString(text: parser.previous!.text)
+        }
+        let state = CompilerState(enclosing: current, function: function, type: type)
+        current = state
+        beginScope()
+        
+        // Compile the parameter list.
+        parser.consume(type: .tokenLeftParen, message: "Expect '(' after function name.")
+        if (!parser.check(type: .tokenRightParen)) {
+            while true {
+                current.function.pointee.arity += 1
+                if current.function.pointee.arity > 255 {
+                    parser.errorAtCurrent(message: "Cannot have more than 255 parameters.")
+                }
+                let paramConstant = parseVariable(isConstant: false, errorMessage: "Expect parameter name.")
+                defineVariable(global: paramConstant)
+                if !parser.match(type: .tokenComma) { break }
+            }
+            
+        }
+        parser.consume(type: .tokenRightParen, message: "Expect ')' after parameters.")
+        
+        // The body.
+        parser.consume(type: .tokenLeftBrace, message: "Expect '{' before function body.")
+        block();
+        
+        let functionPtr = endCompiler()
+        emit(constant: Value.from(objFunctionPtr: functionPtr))
+    }
+    
+    func funDeclaration() {
+        let global = parseVariable(isConstant: false, errorMessage: "Expect function name.")
+        markInitialized()
+        function(type: .Function)
+        defineVariable(global: global)
     }
     
     func statement() {
