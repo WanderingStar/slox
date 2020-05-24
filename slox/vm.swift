@@ -261,7 +261,18 @@ class VM {
                 if !callValue(callee: peek(Int(argCount)), argCount: Int(argCount)) {
                     return .RuntimeError
                 }
-            default:
+            case .Return:
+                let result = pop()
+                frames.removeLast(1)
+                if frames.isEmpty {
+                    _ = pop()
+                    return .Ok
+                }
+                let discard = stack.count - frame.slots - 1
+                stack.removeLast(discard)
+                push(result)
+                
+            case .none:
                 return .RuntimeError
             }
         }

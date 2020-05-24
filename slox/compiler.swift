@@ -217,6 +217,7 @@ class Compiler {
     }
     
     func emitReturn() {
+        emit(opCode: .Nil)
         emit(opCode: .Return)
     }
     
