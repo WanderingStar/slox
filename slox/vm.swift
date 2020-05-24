@@ -272,6 +272,20 @@ class VM {
         let instruction = frame.ip - 1
         let line = chunk.lines[Int(instruction)]
         printErr(format: "[line \(line ?? -1)] in script\n")
+        
+        for frame in frames.reversed() {
+            let function = frame.function
+            // -1 because the IP is sitting on the next instruction to be
+            // executed
+            let line = chunk.lines[frame.ip - 1]
+            
+            printErr(format: "[line \(line ?? -1) in ")
+            if let name = function.pointee.name {
+                printErr(format: "\(String(objString: name.pointee))\n")
+            } else {
+                printErr(format: "script\n")
+            }
+        }
     }
 
 }
