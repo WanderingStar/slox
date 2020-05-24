@@ -56,10 +56,10 @@ class VM {
         guard let compiled = compiler.compile() else {
             return .CompileError
         }
-        push(Value.from(objFunctionPtr: compiled))
-        let frame = CallFrame(function: compiled, ip: 0, slots: stack.count)
-        frames.append(frame)
-
+        let value = Value.from(objFunctionPtr: compiled)
+        push(value)
+        _ = callValue(callee: value, argCount: 0)
+        
         return run()
     }
     
@@ -77,6 +77,37 @@ class VM {
     
     func peek(_ distance: Int) -> Value {
         return stack[stack.count - 1 - distance]
+    }
+    
+    func call(function: UnsafeMutablePointer<ObjFunction>, argCount: Int) -> Bool {
+        if argCount != function.pointee.arity {
+            runtimeError(format: "Expected \(function.pointee.arity) arguments but got \(argCount)")
+            return false
+        }
+        if frames.count == framesMax {
+            runtimeError(format: "Stack overflow.")
+            return false
+        }
+        
+        let frame = CallFrame(function: function, ip: 0, slots: stack.count - argCount - 1)
+        frames.append(frame)
+        return true
+    }
+    
+    func callValue(callee: Value, argCount: Int) -> Bool {
+        if case .valObj(let obj) = callee {
+            switch obj.pointee.type {
+            case .Function:
+                return obj.withMemoryRebound(to: ObjFunction.self, capacity: 1) { (objFunctionPtr) -> Bool in
+                    return call(function: objFunctionPtr, argCount: argCount)
+                }
+            default:
+                // Non-callable object type
+                break
+            }
+        }
+        runtimeError(format: "Can only call functions and classes.")
+        return false
     }
     
     func readByte() -> UInt8 {
@@ -225,6 +256,11 @@ class VM {
             case .Loop:
                 let offset = readShort()
                 frame.ip -= Int(offset)
+            case .Call:
+                let argCount = readByte()
+                if !callValue(callee: peek(Int(argCount)), argCount: Int(argCount)) {
+                    return .RuntimeError
+                }
             default:
                 return .RuntimeError
             }

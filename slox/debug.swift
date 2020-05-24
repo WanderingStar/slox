@@ -107,6 +107,8 @@ func disassembleInstruction(_ chunk: Chunk, offset: Int) -> Int {
         return jumpInstruction("OP_JUMP_IF_UNEQUAL", sign: 1, chunk: chunk, offset: offset)
     case .Loop:
         return jumpInstruction("OP_LOOP", sign: -1, chunk: chunk, offset: offset)
+    case .Call:
+        return byteInstruction("OP_CALL", chunk: chunk, offset: offset)
     case .Return:
         return simpleInstruction("OP_RETURN", offset: offset)
     case .none:

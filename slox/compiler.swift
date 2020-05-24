@@ -328,6 +328,27 @@ class Compiler {
                        message: "Expect ')' after expression.")
     }
     
+    func call(_ canAssign: Bool) {
+        let argCount = argumentList()
+        emit(opCode: .Call, byte: argCount)
+    }
+    
+    func argumentList() -> UInt8 {
+        var argCount: UInt8 = 0
+        if (!parser.check(type: .tokenRightParen)) {
+            while true {
+                expression()
+                if argCount == 255 {
+                    parser.error(message: "Cannot have more than 255 arguments.")
+                }
+                argCount += 1
+                if !parser.match(type: .tokenComma) { break }
+            }
+        }
+        parser.consume(type: .tokenRightParen, message: "Expect ')' after arguments.")
+        return argCount
+    }
+    
     func number(_ canAssign: Bool) {
         guard let string = parser.previous?.string,
             let number = Double(string)
@@ -811,7 +832,7 @@ class Compiler {
     
     
     static let rules: [ParseRule] = [
-        ParseRule( grouping, nil,    .None ),       // TOKEN_LEFT_PAREN
+        ParseRule( grouping, call,   .Call ),       // TOKEN_LEFT_PAREN
         ParseRule( nil,      nil,    .None ),       // TOKEN_RIGHT_PAREN
         ParseRule( nil,      nil,    .None ),       // TOKEN_LEFT_BRACE
         ParseRule( nil,      nil,    .None ),       // TOKEN_RIGHT_BRACE

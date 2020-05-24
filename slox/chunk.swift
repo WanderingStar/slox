@@ -18,7 +18,7 @@ enum OpCode: UInt8 {
     Not, Negate,
     Print,
     Jump, JumpIfFalse, JumpIfUnequal, Loop,
-    Return 
+    Call, Return 
 }
 
 struct Chunk {
