@@ -640,6 +640,8 @@ class Compiler {
             forStatement()
         } else if (parser.match(type: .tokenIf)) {
             ifStatement()
+        } else if (parser.match(type: .tokenReturn)) {
+            returnStatement()
         } else if (parser.match(type: .tokenSwitch)) {
             switchStatement()
         } else if (parser.match(type: .tokenLeftBrace)) {
@@ -730,6 +732,20 @@ class Compiler {
         expression()
         parser.consume(type: .tokenSemicolon, message: "Expect ';' after expression.")
         emit(opCode: .Pop)
+    }
+    
+    func returnStatement() {
+        if current.functionType == .Script {
+            parser.error(message: "Cannot return from top-level code.")
+        }
+        
+        if parser.match(type: .tokenSemicolon) {
+            emitReturn()
+        } else {
+            expression()
+            parser.consume(type: .tokenSemicolon, message: "Expect ';' after return value.")
+            emit(opCode: .Return)
+        }
     }
     
     func ifStatement() {
