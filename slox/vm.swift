@@ -12,9 +12,16 @@ enum InterpretResult: Int {
     case Ok, CompileError, RuntimeError
 }
 
+struct CallFrame {
+    var function: UnsafeMutablePointer<ObjFunction>
+    var ip: Int  // index into the code
+    var slots: Int  // index into Stack
+}
+
+let framesMax = 64
+
 class VM {
-    var chunk = Chunk()
-    var ip = 0
+    var frames: [CallFrame] = []
     var debugTraceExecution = true
     var stack: [Value] = []
     var globals = Table()
@@ -22,24 +29,28 @@ class VM {
     var objects: UnsafeMutablePointer<Obj>? = nil
     var current: CompilerState
     
+    var frame: CallFrame {
+        get { frames.last! }
+        set(newValue) { frames[frames.count - 1] = newValue }
+    }
+    
+    var chunk: Chunk {
+        return frame.function.pointee.chunk
+    }
+    
     init() {
+        frames.reserveCapacity(framesMax)
+        stack.reserveCapacity(framesMax * Int(UINT8_COUNT))
         var locals: [Local] = []
         locals.reserveCapacity(Int(UINT8_COUNT))
         current = CompilerState(locals: locals)
     }
     
     func free() {
-        chunk = Chunk()
         stack = []
         freeObjects()
         freeTable(&globals)
         freeTable(&strings)
-    }
-    
-    func interpret(chunk: Chunk) -> InterpretResult {
-        self.chunk = chunk
-        self.ip = 0
-        return run()
     }
     
     func interpret(source: String) -> InterpretResult {
@@ -47,11 +58,11 @@ class VM {
         guard let compiled = compiler.compile() else {
             return .CompileError
         }
-        chunk = compiled
-        ip = 0
-        let result = run()
-        chunk.free()
-        return result
+        push(Value.from(objFunctionPtr: compiled))
+        let frame = CallFrame(function: compiled, ip: 0, slots: stack.count)
+        frames.append(frame)
+
+        return run()
     }
     
     func push(_ value: Value) {
@@ -71,8 +82,8 @@ class VM {
     }
     
     func readByte() -> UInt8 {
-        defer { ip += 1 }
-        return chunk.code[ip]
+        defer { frame.ip += 1 }
+        return frame.function.pointee.chunk.code[Int(frame.ip)]
     }
     
     func readConstant() -> Value {
@@ -80,8 +91,8 @@ class VM {
     }
     
     func readShort() -> UInt16 {
-        ip += 2
-        return UInt16(chunk.code[ip - 2] << 8) | UInt16(chunk.code[ip - 1])
+        frame.ip += 2
+        return UInt16(chunk.code[Int(frame.ip - 2)] << 8) | UInt16(chunk.code[Int(frame.ip - 1)])
     }
     
     func readString() -> UnsafeMutablePointer<ObjString> {
@@ -114,7 +125,7 @@ class VM {
                 }
                 print()
                 // print(tableEntries(table: strings))
-                _ = disassembleInstruction(chunk, offset: ip)
+                _ = disassembleInstruction(chunk, offset: Int(frame.ip))
             }
             let instruction = readByte()
             switch OpCode(rawValue: instruction) {
@@ -133,11 +144,11 @@ class VM {
                 let n = readByte()
                 popN(n)
             case .GetLocal:
-                let slot = readByte()
-                push(stack[Int(slot)])
+                let slot = Int(readByte())
+                push(stack[Int(frame.slots + slot)])
             case .SetLocal:
-                let slot = readByte()
-                stack[Int(slot)] = peek(0)
+                let slot = Int(readByte())
+                stack[Int(frame.slots + slot)] = peek(0)
             case .GetGlobal:
                 let name = readString()
                 guard let value = tableGet(table: globals, key: name) else {
@@ -200,22 +211,22 @@ class VM {
                 print(pop())
             case .Jump:
                 let offset = readShort()
-                ip += Int(offset)
+                frame.ip += Int(offset)
             case .JumpIfFalse:
                 let offset = readShort()
                 if (peek(0).isFalsey) {
-                    ip += Int(offset)
+                    frame.ip += Int(offset)
                 }
             case .JumpIfUnequal:
                 // this is for switch, so it does NOT pop the first artument
                 let b = pop(), a = peek(0)
                 let offset = readShort()
                 if (a != b) {
-                    ip += Int(offset)
+                    frame.ip += Int(offset)
                 }
             case .Loop:
                 let offset = readShort()
-                ip -= Int(offset)
+                frame.ip -= Int(offset)
             default:
                 return .RuntimeError
             }
@@ -224,8 +235,8 @@ class VM {
     
     func runtimeError(format: String, _ arguments: Any...) {
         printErr(format: format + "\n", arguments)
-        let instruction = ip - 1
-        let line = chunk.lines[instruction]
+        let instruction = frame.ip - 1
+        let line = chunk.lines[Int(instruction)]
         printErr(format: "[line \(line ?? -1)] in script\n")
     }
 

@@ -87,6 +87,13 @@ enum Value : CustomStringConvertible, Comparable, Equatable {
         }
     }
     
+    static func from(objFunctionPtr: UnsafeMutablePointer<ObjFunction>) -> Value {
+        return objFunctionPtr.withMemoryRebound(to: Obj.self, capacity: 1) {
+            (ptr) -> Value in
+            return .valObj(ptr)
+        }
+    }
+    
     static func < (lhs: Value, rhs: Value) -> Bool {
         switch (lhs, rhs) {
         case (.valNumber(let a), .valNumber(let b)):

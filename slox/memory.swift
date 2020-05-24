@@ -44,12 +44,12 @@ extension VM {
 
     func allocateString(chars: UnsafeMutablePointer<CChar>, length: Int, hash: UInt32) -> UnsafeMutablePointer<ObjString> {
         let ptr: UnsafeMutablePointer<ObjString> = allocateObj(objType: .String)
+        var value: ObjString?
         ptr.withMemoryRebound(to: Obj.self, capacity: 1) { (objPtr) -> () in
             objPtr.pointee.type = .String
+            value = ObjString(obj: objPtr.pointee, length: length, chars: chars, hash: hash)
         }
-        ptr.pointee.length = length
-        ptr.pointee.chars = chars
-        ptr.pointee.hash = hash
+        ptr.initialize(to: value!)
         
         _ = tableSet(table: &strings, key: ptr, value: .valNil(()))
         
@@ -130,7 +130,8 @@ extension VM {
                 _ = reallocate(pointer: function, oldCapacity: 1, newCapacity: 0)
             }
         }
-        _ = reallocate(pointer: object, oldCapacity: 1, newCapacity: 0)
+        // we don't need this... right?
+        // _ = reallocate(pointer: object, oldCapacity: 1, newCapacity: 0)
     }
     
     func freeTable(_ table: inout Table) {
@@ -140,11 +141,14 @@ extension VM {
     }
     
     func newFunction() -> UnsafeMutablePointer<ObjFunction> {
-        let function: UnsafeMutablePointer<ObjFunction> = allocateObj(objType: .Function)
-        function.pointee.arity = 0;
-        function.pointee.name = nil
-        function.pointee.chunk = Chunk()
-        return function
+        let ptr: UnsafeMutablePointer<ObjFunction> = allocateObj(objType: .Function)
+        var value: ObjFunction?
+        ptr.withMemoryRebound(to: Obj.self, capacity: 1) { (objPtr) -> () in
+            objPtr.pointee.type = .Function
+            value = ObjFunction(obj: objPtr.pointee, arity: 0, chunk: Chunk(), name: nil)
+        }
+        ptr.initialize(to: value!)
+        return ptr
     }
     
     func printFunction(function: UnsafeMutablePointer<ObjFunction>) {
